@@ -1,25 +1,34 @@
-# Contributing Guidelines — Mpesa Analyzer WebApp
+# Contributing Guidelines — M-Pesa Analyzer Platform
 
-Guidelines for contributing code, views, and migrations to the WebApp repository.
-
----
-
-## 1. Branching Strategy
-
-- Develop all features on descriptive branches (`feature/budget-notifications`, `fix/upload-stream-handling`).
-- Merge into `main` only via pull requests.
+Guidelines for contributing code, views, endpoints, and ML services to the monorepo.
 
 ---
 
-## 2. Pull Request Checklist
+## 1. Branching & Commit Strategy
 
-1. Verify migrations apply cleanly from empty database state:
-   ```bash
-   php spark migrate:refresh
-   ```
-2. Verify all views render without unhandled null pointer warnings.
-3. Validate documentation conforms to `project-docs`:
-   ```bash
-   python3 /home/niccher/Downloads/readme-docs-skill/readme-docs-skill/scripts/lint-docs.py .
-   ```
-4. Include summary of updated API endpoints or views in the PR description.
+- Branch naming: `feature/<name>`, `fix/<name>`, `docs/<name>`, `refactor/<name>`.
+- Conventional commit scopes:
+  - `web`: CodeIgniter 4 controllers, models, views, and migrations.
+  - `ml`: FastAPI routers, inference services, prompts, and llama-server.
+  - `docs`: Documentation updates.
+  - `ci`: GitHub Actions workflows and Docker Compose definitions.
+
+---
+
+## 2. Pull Request Definition of Done
+
+Every pull request modifying platform behavior must satisfy:
+
+1. **Database Safety**:
+   - If database columns are changed, CodeIgniter migrations in `web/app/Database/Migrations/` must be included.
+2. **Automated Tests**:
+   - Run PHPUnit tests if `web/` is modified: `docker compose exec web vendor/bin/phpunit`.
+   - Run Pytest tests if `ml/` is modified: `docker compose exec ml pytest`.
+3. **Documentation Integrity**:
+   - Run documentation quality linter:
+     ```bash
+     python3 scripts/lint-docs.py .
+     ```
+   - Must pass with 0 errors.
+4. **Environment Variables**:
+   - If new configuration flags are added, update `.env.example` and `docs/user/configuration.md`.

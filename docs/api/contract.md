@@ -69,3 +69,31 @@ Returns real-time processing counts for active extraction jobs.
 | `/api/v1/settings/delete-data` | POST | Delete all financial records and uploaded SMS while keeping account. |
 | `/api/v1/settings/delete-account`| POST | Permanently purge user account, credentials, and data. |
 | `/api/v1/system/version` | GET | Public endpoint returning current ecosystem release version and changelogs. |
+
+---
+
+## 5. ML Microservice API Endpoints (`http://ml-mpesa-analyzer:9050`)
+
+The FastAPI service exposes autonomous batch processing, status monitoring, and administration endpoints.
+
+### Core Pipeline Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/health` | GET | Liveness probe returning model and database connection status. |
+| `/process/trigger` | POST | Manually trigger one processing cycle across all unprocessed SMS. |
+| `/process/for-user/{user_id}` | POST | Trigger asynchronous LLM processing for a specific user ID. |
+| `/process/db` | POST | Alias for `/process/trigger`. |
+
+### Administrative & Telemetry Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/admin/status` | GET | Operational summary: active engine, GGUF model metadata, and queue metrics. |
+| `/admin/telemetry` | GET | Real-time system utilization: CPU, RAM, disk, llama PID, and inference latency. |
+| `/admin/prompts` | GET / POST | Manage versioned classification and extraction prompts. |
+| `/admin/prompts/activate/{id}` | POST | Switch active prompt version for classifier or extractor. |
+| `/admin/models` | GET | List installed GGUF models in `/models` with file sizes and architectures. |
+| `/admin/models/upload` | POST | Stream upload new quantized `.gguf` model files. |
+| `/admin/models/activate` | POST | Set active model in `tbl_ML_Controls` and restart `llama-server`. |
+| `/admin/models/delete` | POST | Remove an inactive GGUF weight file. |

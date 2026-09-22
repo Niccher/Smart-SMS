@@ -1,21 +1,28 @@
-version: '3.8'
-
-# Standalone Docker Compose for Mpesa Analyzer WebApp
-# Usage: docker compose up --build -d
-# This will spin up the webapp, MySQL, and phpMyAdmin.
+# ─────────────────────────────────────────────────────────────
+# M-Pesa Analyzer Platform — Unified Multi-Container Compose
+# ─────────────────────────────────────────────────────────────
+# Usage:
+#   docker compose up --build -d
+#
+# Services:
+#   - mysql:              Port 9306 (internal 3306)
+#   - phpmyadmin:         Port 9000
+#   - web (CodeIgniter):  Port 9002
+#   - ml  (FastAPI + LLM): Port 9021 (API) & 9022 (llama-server)
+# ─────────────────────────────────────────────────────────────
 
 services:
   mysql:
     image: mysql:8.4
     container_name: shared-mysql
     ports:
-      - "9306:3306"
+      - "${MYSQL_HOST_PORT:-9306}:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: db_mpesa_analyzer
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-db_mpesa_analyzer}
     command: --sql-mode="STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_password}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -23,34 +30,46 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
-      - shared-network
+      - mpesa-network
 
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: shared-phpmyadmin
     ports:
-      - "9000:80"
+      - "${PHPMYADMIN_PORT:-9000}:80"
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
       PMA_USER: root
-      PMA_PASSWORD: root_password
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
     depends_on:
       mysql:
         condition: service_healthy
     networks:
-      - shared-network
+      - mpesa-network
 
-  mpesa-analyzer:
+  web:
     build:
-      context: .
+      context: ./web
       dockerfile: Dockerfile
-    image: mpesa-analyzer-webapp:latest
+    image: mpesa-analyzer-web:latest
     container_name: mpesa-analyzer-webapp
     ports:
-      - "9002:80"
+      - "${WEB_PORT:-9002}:80"
     volumes:
-      - .:/var/www/html
+      - ./web:/var/www/html
+    environment:
+      - CI_ENVIRONMENT=${CI_ENVIRONMENT:-development}
+      - database.default.hostname=mysql
+      - database.default.database=${DB_NAME:-db_mpesa_analyzer}
+      - database.default.username=root
+      - database.default.password=${MYSQL_ROOT_PASSWORD:-root_password}
+      - database.default.port=3306
+      - database.default.DBDriver=MySQLi
+      - ML_BACKEND_URL=http://ml-mpesa-analyzer:9050
+    env_file:
+      - path: .env
+        required: false
     depends_on:
       mysql:
         condition: service_healthy
@@ -61,11 +80,52 @@ services:
       retries: 3
       start_period: 15s
     networks:
-      - shared-network
+      - mpesa-network
+
+  ml:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile
+    image: mpesa-analyzer-ml:latest
+    container_name: ml-mpesa-analyzer
+    ports:
+      - "${ML_MPESA_ANALYZER_API_PORT:-9021}:9050"
+      - "${ML_MPESA_ANALYZER_LLAMA_PORT:-9022}:8080"
+    volumes:
+      - ./ml/app:/app/app
+      - ./ml/models:/models
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME:-db_mpesa_analyzer}
+      - DB_USER=root
+      - DB_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password}
+      - LLAMA_PORT=8080
+      - LLM_BASE_URL=http://localhost:8080/v1
+      - LLM_MODEL=${LLM_MODEL:-qwen2.5-1.5b-instruct}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai-compatible}
+      - MODEL_PATH=${MODEL_PATH:-/models/qwen2.5-1.5b-instruct-q4_k_m.gguf}
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9050/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      mpesa-network:
+        aliases:
+          - ml-mpesa-analyzer
+          - ml
 
 volumes:
   mysql-data:
 
 networks:
-  shared-network:
+  mpesa-network:
     name: hosts-shared-network

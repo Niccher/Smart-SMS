@@ -1,0 +1,84 @@
+openapi: 3.0.3
+info:
+  title: M-Pesa Analyzer Platform API
+  description: Combined API contract for the M-Pesa Analyzer CodeIgniter 4 WebApp and FastAPI ML microservice.
+  version: 1.4.0
+servers:
+  - url: http://localhost:9002/api/v1
+    description: WebApp & Mobile API Gateway
+  - url: http://localhost:9021
+    description: ML Intelligence Microservice
+paths:
+  /health:
+    get:
+      summary: Health check probe
+      description: Returns liveness and service readiness status.
+      responses:
+        '200':
+          description: Service is healthy and operational.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  db_configured:
+                    type: boolean
+                    example: true
+  /upload:
+    post:
+      summary: Upload encrypted SMS transaction payload
+      description: Ingests an AES-128-CBC encrypted binary stream with prefixed 16-byte IV.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Ingestion success.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  messages_imported:
+                    type: integer
+                    example: 45
+  /process/for-user/{user_id}:
+    post:
+      summary: Trigger ML batch analysis for user
+      description: Spawns an asynchronous batch extraction job for unprocessed user transactions.
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job dispatched.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id:
+                    type: integer
+                  status:
+                    type: string
+                    example: starting
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer

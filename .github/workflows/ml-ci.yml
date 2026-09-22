@@ -1,0 +1,30 @@
+name: ML Service CI (FastAPI)
+
+on:
+  push:
+    paths:
+      - 'ml/**'
+      - '.github/workflows/ml-ci.yml'
+  pull_request:
+    paths:
+      - 'ml/**'
+      - '.github/workflows/ml-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Dependencies
+        run: |
+          cd ml
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+      - name: Run Pytest
+        run: |
+          cd ml
+          pytest tests/ -v
