@@ -12,7 +12,6 @@ All multi-service configurations are managed via the `.env` file at the root of 
 | `ML_MPESA_ANALYZER_API_PORT` | ML | `9021` | Host published port for the FastAPI microservice |
 | `ML_MPESA_ANALYZER_LLAMA_PORT` | ML | `9022` | Host published port for the local llama-server |
 | `MYSQL_HOST_PORT` | MySQL | `9306` | Host published port for external MySQL connections |
-| `PHPMYADMIN_PORT` | phpMyAdmin | `9000` | Host published port for phpMyAdmin web GUI |
 
 ---
 

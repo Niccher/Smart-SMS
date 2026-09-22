@@ -18,7 +18,6 @@ Software engineers: [docs/README.md](docs/README.md).
 | **ML Microservice** | http://localhost:9021 | FastAPI root / API endpoint |
 | **ML Health Check** | http://localhost:9021/health | `{"status": "ok", "db_configured": true}` |
 | **ML Swagger UI** | http://localhost:9021/docs | Interactive OpenAPI documentation |
-| **phpMyAdmin** | http://localhost:9000 | MySQL database administration |
 | **MySQL Server** | localhost:9306 | Direct database access port |
 
 ---
@@ -40,26 +39,28 @@ Software engineers: [docs/README.md](docs/README.md).
 
 ## Setup and Run
 
-1. Clone or navigate to the repository directory:
-   ```bash
-   cd MPesa
-   ```
-2. Create your local environment configuration:
+### Method 1 — One-Click Automated Pipeline (Recommended)
+Run the automated deployment script from the repository root:
+```bash
+bash scripts/deploy.sh
+```
+This 13-step script automatically detects your dynamic IP, verifies system RAM/disk, writes `.env`, builds containers, waits for MySQL health, executes migrations, validates endpoints, and outputs a formatted status summary.
+
+### Method 2 — Manual Docker Compose
+1. Copy environment configuration:
    ```bash
    cp .env.example .env
    ```
-3. Start the entire container stack:
+2. Start the multi-container stack:
    ```bash
    docker compose up --build -d
    ```
-   *Migrations and default database seeds execute automatically during WebApp boot.*
-4. Verify healthchecks:
+3. Verify health checks:
    ```bash
    curl http://localhost:9002/health
    curl http://localhost:9021/health
    ```
-5. Open http://localhost:9002 in your browser.
-6. Stop the stack when done:
+4. Stop the stack when done:
    ```bash
    docker compose down
    ```
@@ -73,9 +74,8 @@ Software engineers: [docs/README.md](docs/README.md).
 | `WEB_PORT` | `9002` | Host port for the WebApp dashboard |
 | `ML_MPESA_ANALYZER_API_PORT` | `9021` | Host port for FastAPI microservice |
 | `MYSQL_HOST_PORT` | `9306` | External port for MySQL 8.4 |
-| `PHPMYADMIN_PORT` | `9000` | Host port for phpMyAdmin GUI |
-| `CI_ENVIRONMENT` | `development` | CodeIgniter environment (`development` or `production`) |
-| `LLM_ENGINE` | `local` | Inference engine (`local` llama-server or `external` API) |
+| `CI_ENVIRONMENT` | `development` | CodeIgniter environment mode |
+| `LLM_ENGINE` | `local` | Inference engine (`local` or `external`) |
 | `SUPERADMIN_EMAIL` | `superadmin@mpesa-analyzer.local` | Default admin email seeded at boot |
 | `SUPERADMIN_PASSWORD` | `change_this_secure_password_123!` | Initial administrator password |
 
@@ -85,10 +85,10 @@ Full environment variable reference: [docs/user/configuration.md](docs/user/conf
 
 ## Something Went Wrong?
 
-- **Port in use (9002, 9021, 9306, 9000)**: Adjust the respective port in `.env`.
+- **Port in use (9002, 9021, 9306)**: Adjust the respective port in `.env`.
 - **MySQL container unhealthy**: Check logs with `docker compose logs mysql`.
 - **ML container fails health check**: Ensure the GGUF model exists or check `docker compose logs ml`.
-- **Web 500 error**: Verify `web/writable/` permissions: `chmod -R 777 web/writable`.
+- **Web 500 error**: Verify `web/writable/` permissions: `chmod -R 775 web/writable`.
 - Detailed operational remedies: [docs/user/troubleshooting.md](docs/user/troubleshooting.md).
 
 ---

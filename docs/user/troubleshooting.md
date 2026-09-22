@@ -21,17 +21,16 @@ Common operational issues and remedies when running the multi-container monorepo
 
 ---
 
-## 2. Port Conflict on 9002, 9021, 9000, or 9306
+## 2. Port Conflict on 9002, 9021, or 9306
 
-**Symptom**: `bind: address already in use` during `docker compose up`.
+**Symptom**: `bind: address already in use` during `docker compose up` or `deploy.sh`.
 
 **Remedy**:
 Update the conflicting port in your `.env` file:
 - `WEB_PORT=9003`
 - `ML_MPESA_ANALYZER_API_PORT=9023`
-- `PHPMYADMIN_PORT=9001`
 - `MYSQL_HOST_PORT=9307`
-Then restart: `docker compose up -d`.
+Then restart: `docker compose up -d` or `bash scripts/deploy.sh`.
 
 ---
 

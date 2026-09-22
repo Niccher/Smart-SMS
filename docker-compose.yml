@@ -6,7 +6,6 @@
 #
 # Services:
 #   - mysql:              Port 9306 (internal 3306)
-#   - phpmyadmin:         Port 9000
 #   - web (CodeIgniter):  Port 9002
 #   - ml  (FastAPI + LLM): Port 9021 (API) & 9022 (llama-server)
 # ─────────────────────────────────────────────────────────────
@@ -29,22 +28,6 @@ services:
       start_period: 30s
     volumes:
       - mysql-data:/var/lib/mysql
-    networks:
-      - mpesa-network
-
-  phpmyadmin:
-    image: phpmyadmin:latest
-    container_name: shared-phpmyadmin
-    ports:
-      - "${PHPMYADMIN_PORT:-9000}:80"
-    environment:
-      PMA_HOST: mysql
-      PMA_PORT: 3306
-      PMA_USER: root
-      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
-    depends_on:
-      mysql:
-        condition: service_healthy
     networks:
       - mpesa-network
 
