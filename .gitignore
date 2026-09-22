@@ -1,27 +1,30 @@
-#-------------------------
-# CodeIgniter 4
-#-------------------------
+# ── CodeIgniter 4 (PHP) ──────────────────────────────────────
+web/vendor/
 vendor/
 
 # Env files (never commit real credentials)
 .env
 .env.*
 !.env.example
+web/.env
+web/.env.*
+!web/.env.example
+ml/.env
+ml/.env.*
+!ml/.env.example
 
 # Application runtime data
-writable/cache/*
-writable/logs/*
-writable/session/*
-!writable/session/index.html
-writable/uploads/*
-!writable/uploads/index.html
-writable/debugbar/*
-!writable/debugbar/index.html
-writable/backups/
-writable/*.sqlite
-writable/*.sqlite-journal
-
-# Views cache (CI4 stores compiled views under writable/cache)
+web/writable/cache/*
+web/writable/logs/*
+web/writable/session/*
+!web/writable/session/index.html
+web/writable/uploads/*
+!web/writable/uploads/index.html
+web/writable/debugbar/*
+!web/writable/debugbar/index.html
+web/writable/backups/
+web/writable/*.sqlite
+web/writable/*.sqlite-journal
 
 # Test artifacts
 tests/coverage*
@@ -32,103 +35,80 @@ phpunit.xml
 build/
 *.coverage
 
-#-------------------------
-# Operating System Junk
-#-------------------------
+# ── Python & ML Microservice ─────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.coverage.*
+coverage.xml
+venv/
+.venv/
 
-# OS X
-.DS_Store
-.AppleDouble
-.LSOverride
-._*
+# ── Large binary assets & ML weights ─────────────────────────
+models/*.gguf
+models/*.bin
+ml/models/*.gguf
+ml/models/*.bin
+llama-bin/*.dll
+llama-bin/*.dylib
+ml/llama-bin/*.dll
+ml/llama-bin/*.dylib
 
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-# Windows Installer files
-*.cab
-*.msi
-*.msm
-*.msp
-
-# Windows shortcuts
-*.lnk
-
-# Linux
-*~
-*.swp
-*.swo
-
-# KDE directory preferences
-.directory
-
-# Linux trash folder which might appear on any partition or disk
-.Trash-*
-
-#-------------------------
-# Logs & Temp Files
-#-------------------------
-*.log
-php_errors.log
-*.tmp
-*.temp
-
-#-------------------------
-# IDE / Editors
-#-------------------------
-
-# Jetbrains (PHPStorm, etc)
-.idea/
-*.iml
-
-# Netbeans
-nbproject/
-nbbuild/
-nbdist/
-.nb-gradle/
-
-# Sublime Text
-*.sublime-workspace
-*.sublime-project
-
-# Visual Studio Code
-.vscode/
-
-# phpenv local config
-.php-version
-
-# Modules Testing
-_modules/*
-
-#-------------------------
-# Databases / Dumps (security risk)
-#-------------------------
+# ── Databases & Dumps (security risk) ────────────────────────
 *.sql
 *.sql.gz
 *.dump
 app_auth_tokens.sql
 
-#-------------------------
-# Docker / Misc
-#-------------------------
-.vagrant
-Vagrantfile
-node_modules/
+# ── Logs & Temp Files ────────────────────────────────────────
+*.log
+logs/
+php_errors.log
+*.tmp
+*.temp
 
-# Python / tooling caches (if any)
-__pycache__/
-.pytest_cache/
-.ruff_cache/
+# ── Operating System Junk ────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+*~
+*.swp
+*.swo
+.directory
+.Trash-*
 
-#-------------------------
-# Local Debug / Scratch Scripts
-#-------------------------
-ipcheck.php
-test_upsert.php
-*.bak
-*.orig
+# ── IDE / Editors ────────────────────────────────────────────
+.idea/
+*.iml
+nbproject/
+nbbuild/
+nbdist/
+.nb-gradle/
+*.sublime-workspace
+*.sublime-project
+.vscode/
+*.code-workspace
+.php-version
+
+# ── Docker ───────────────────────────────────────────────────
+.docker/
+docker-compose.override.yml
