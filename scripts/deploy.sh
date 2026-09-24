@@ -182,7 +182,12 @@ if [ -d ".git" ]; then
     fi
     if git remote | grep -q "origin"; then
         log "Pulling latest changes from origin..."
-        git pull origin main 2>&1 | tail -5 || warn "Could not pull from origin, continuing with local code..."
+        PULL_LOG=$(git pull origin main 2>&1) || warn "Could not pull from origin, continuing with local code..."
+        echo "$PULL_LOG" | tail -5
+        if echo "$PULL_LOG" | grep -q "scripts/deploy.sh"; then
+            log "deploy.sh was updated from origin. Re-executing deployment script..."
+            exec bash "$0" "$@"
+        fi
     else
         log "Working tree clean (local repository mode)"
     fi
@@ -205,6 +210,27 @@ set_env() {
         echo "${K}=${V}" >> .env
     fi
 }
+
+# Auto-migrate legacy development ports (9002, 9021, 9022, 9306) to standard production ports
+CURR_WEB=$(grep "^WEB_PORT" .env 2>/dev/null | cut -d'=' -f2 | tr -d ' ' || true)
+if [ "$CURR_WEB" = "9002" ] || [ -z "$CURR_WEB" ]; then
+    set_env "WEB_PORT" "80"
+fi
+
+CURR_ML=$(grep "^ML_MPESA_ANALYZER_API_PORT" .env 2>/dev/null | cut -d'=' -f2 | tr -d ' ' || true)
+if [ "$CURR_ML" = "9021" ] || [ -z "$CURR_ML" ]; then
+    set_env "ML_MPESA_ANALYZER_API_PORT" "8001"
+fi
+
+CURR_LLAMA=$(grep "^ML_MPESA_ANALYZER_LLAMA_PORT" .env 2>/dev/null | cut -d'=' -f2 | tr -d ' ' || true)
+if [ "$CURR_LLAMA" = "9022" ] || [ -z "$CURR_LLAMA" ]; then
+    set_env "ML_MPESA_ANALYZER_LLAMA_PORT" "8080"
+fi
+
+CURR_MYSQL=$(grep "^MYSQL_HOST_PORT" .env 2>/dev/null | cut -d'=' -f2 | tr -d ' ' || true)
+if [ "$CURR_MYSQL" = "9306" ] || [ -z "$CURR_MYSQL" ]; then
+    set_env "MYSQL_HOST_PORT" "3306"
+fi
 
 # Resolve Ports (Default: 80 for WebApp, 8001 for ML, 3306 for MySQL)
 WEB_PORT=$(grep "^WEB_PORT" .env 2>/dev/null | cut -d'=' -f2 | tr -d ' ' || echo "80")

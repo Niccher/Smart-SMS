@@ -43,6 +43,9 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-di
 # ── Application code ──────────────────────────────────────────────────────────
 COPY . /var/www/html
 
+# Backup vendor directory so it can be restored if shadowed by any external volume mount
+RUN cp -a /var/www/html/vendor /opt/vendor
+
 RUN mkdir -p /var/www/html/writable/cache /var/www/html/writable/session /var/www/html/writable/logs /var/www/html/writable/uploads \
     && chown -R www-data:www-data /var/www/html/writable \
     && chmod -R 775 /var/www/html/writable

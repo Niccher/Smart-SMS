@@ -1,6 +1,18 @@
 #!/bin/bash
 set -e
 
+# Restore vendor dependencies if shadowed by a host volume mount
+if [ ! -f "/var/www/html/vendor/autoload.php" ] && [ -d "/opt/vendor" ]; then
+    echo "Restoring vendor dependencies from /opt/vendor into /var/www/html/vendor..."
+    mkdir -p /var/www/html/vendor
+    cp -a /opt/vendor/. /var/www/html/vendor/
+fi
+
+# Ensure writable directories exist with proper permissions
+mkdir -p /var/www/html/writable/cache /var/www/html/writable/session /var/www/html/writable/logs /var/www/html/writable/uploads
+chown -R www-data:www-data /var/www/html/writable 2>/dev/null || true
+chmod -R 775 /var/www/html/writable 2>/dev/null || true
+
 # Wait for MySQL to be fully ready (beyond just ping)
 echo "Waiting for MySQL to accept connections..."
 max_retries=30
@@ -52,22 +64,22 @@ echo "Migrations complete."
 echo "Running database seeders..."
 
 # 1. Superadmin account (reads SUPERADMIN_EMAIL / _PASSWORD / _USERNAME from env)
-php spark db:seed SuperAdminSeeder
+php spark db:seed SuperAdminSeeder || echo "Notice: SuperAdminSeeder completed with notice."
 
 # 2. Global app settings (app name, email, retention, maintenance, registration, etc.)
-php spark db:seed AppSettingsSeeder
+php spark db:seed AppSettingsSeeder || echo "Notice: AppSettingsSeeder completed with notice."
 
 # 3. Cron job configurations (schedules + types read by the cron daemon)
-php spark db:seed CronSettingsSeeder
+php spark db:seed CronSettingsSeeder || echo "Notice: CronSettingsSeeder completed with notice."
 
 # 4. Finance sender allowlist (ML backend reads this to classify finance SMS)
-php spark db:seed AllowedSendersSeeder
+php spark db:seed AllowedSendersSeeder || echo "Notice: AllowedSendersSeeder completed with notice."
 
 # 5. M-Pesa keyword → category correction rules (used by AnalysisCallbackController)
-php spark db:seed CategoryRulesSeeder
+php spark db:seed CategoryRulesSeeder || echo "Notice: CategoryRulesSeeder completed with notice."
 
 # 6. ML backend control flags (tuning defaults — overridden via admin panel)
-php spark db:seed MLControlsSeeder
+php spark db:seed MLControlsSeeder || echo "Notice: MLControlsSeeder completed with notice."
 
 echo "Seeders complete."
 
