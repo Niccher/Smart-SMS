@@ -8,10 +8,10 @@ All multi-service configurations are managed via the `.env` file at the root of 
 
 | Variable | Service | Default | Purpose |
 |---|---|---|---|
-| `WEB_PORT` | WebApp | `9002` | Host published port for the CodeIgniter dashboard |
-| `ML_MPESA_ANALYZER_API_PORT` | ML | `9021` | Host published port for the FastAPI microservice |
-| `ML_MPESA_ANALYZER_LLAMA_PORT` | ML | `9022` | Host published port for the local llama-server |
-| `MYSQL_HOST_PORT` | MySQL | `9306` | Host published port for external MySQL connections |
+| `WEB_PORT` | WebApp | `80` | Host published port for the CodeIgniter dashboard |
+| `ML_MPESA_ANALYZER_API_PORT` | ML | `8001` | Host published port for the FastAPI microservice |
+| `ML_MPESA_ANALYZER_LLAMA_PORT` | ML | `8080` | Host published port for the local llama-server |
+| `MYSQL_HOST_PORT` | MySQL | `3306` | Host published port for external MySQL connections |
 
 ---
 
@@ -32,8 +32,8 @@ All multi-service configurations are managed via the `.env` file at the root of 
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `CI_ENVIRONMENT` | `development` | CodeIgniter mode (`development` or `production`) |
-| `app.baseURL` | `http://localhost:9002/` | Base URL used for link generation and redirects |
+| `CI_ENVIRONMENT` | `production` | CodeIgniter mode (`development` or `production`) |
+| `app.baseURL` | `http://localhost/` | Base URL used for link generation and redirects |
 | `ML_BACKEND_URL` | `http://ml-mpesa-analyzer:9050` | Microservice URL used by WebApp commands |
 | `MPESA_CRYPT_KEY` | *(Set in .env)* | 16-byte key for AES-128-CBC decryption |
 | `MPESA_CRYPT_IV` | *(Set in .env)* | Fallback 16-byte IV for legacy uploads |

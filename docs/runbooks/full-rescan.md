@@ -15,7 +15,7 @@ This runbook outlines the steps to re-classify and re-extract historical SMS mes
 
 ## 2. Procedure A: Via Web Dashboard (User/Operator)
 
-1. Log into the Web Dashboard at http://localhost:9002.
+1. Log into the Web Dashboard at http://localhost.
 2. Navigate to **History $\to$ ML Jobs** or **Dashboard**.
 3. **Trigger Partial Rescan**: Click **Rescan Unprocessed** to process only pending or errored records.
 4. **Trigger Full Rescan**: Click **Full Rescan (Reset All)**. This action:

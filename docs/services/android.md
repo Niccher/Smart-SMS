@@ -51,6 +51,6 @@ sequenceDiagram
 
 When running the Android application against the local monorepo backend in an Android Virtual Device (AVD):
 
-- **Base URL**: Use `http://10.0.2.2:9002/api/v1/` (do not use `localhost`, which maps to the emulator itself).
+- **Base URL**: Use `http://10.0.2.2/api/v1/` (do not use `localhost`, which maps to the emulator itself).
 - **Cleartext HTTP**: In `debug` builds, ensure `android:usesCleartextTraffic="true"` is enabled in `network_security_config.xml` for `10.0.2.2`.
-- **Physical Device**: Connect phone to the same Wi-Fi and set Base URL to the development machine's LAN IP (e.g., `http://192.168.1.100:9002/api/v1/`).
+- **Physical Device**: Connect phone to the same Wi-Fi and set Base URL to the development machine's LAN IP (e.g., `http://192.168.1.100/api/v1/`).

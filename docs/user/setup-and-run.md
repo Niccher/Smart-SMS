@@ -8,10 +8,10 @@ This guide walks through starting and operating the full **M-Pesa Analyzer Platf
 
 - **Docker Engine** 24.0+ and **Docker Compose** v2
 - Host ports available:
-  - `9002` (WebApp Dashboard)
-  - `9021` (FastAPI Microservice)
-  - `9022` (llama-server)
-  - `9306` (MySQL Database)
+  - `80` (WebApp Dashboard)
+  - `8001` (FastAPI Microservice)
+  - `8080` (llama-server)
+  - `3306` (MySQL Database)
 
 ---
 
@@ -55,16 +55,16 @@ docker compose up --build -d
 
 During container boot:
 1. The **MySQL 8.4** container starts and runs health checks on port `3306`.
-2. The **WebApp** container waits for MySQL, executes migrations via `php spark migrate --all`, seeds default admin credentials, starts the cron daemon, and launches Apache on port `9002`.
+2. The **WebApp** container waits for MySQL, executes migrations via `php spark migrate --all`, seeds default admin credentials, starts the cron daemon, and launches Apache on port `80`.
 3. The **ML** container verifies or downloads the Qwen2.5 GGUF weights, starts `llama-server` on port `8080`, and launches FastAPI with the background DB poller on port `9050`.
 
 ### Step 3: Verify Service Health
 ```bash
 # Check WebApp health
-curl -f http://localhost:9002/health
+curl -f http://localhost/health
 
 # Check ML microservice health
-curl -f http://localhost:9021/health
+curl -f http://localhost:8001/health
 ```
 
 Expected ML response:
@@ -73,9 +73,9 @@ Expected ML response:
 ```
 
 ### Step 4: Access Interfaces
-- **Web Application Dashboard**: http://localhost:9002
-- **Admin ML Config Panel**: http://localhost:9002/admin/ml
-- **ML Swagger UI & Documentation**: http://localhost:9021/docs
+- **Web Application Dashboard**: http://localhost
+- **Admin ML Config Panel**: http://localhost/admin/ml
+- **ML Swagger UI & Documentation**: http://localhost:8001/docs
 
 ### Step 5: Stopping the Stack
 ```bash

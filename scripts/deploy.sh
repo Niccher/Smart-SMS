@@ -6,17 +6,22 @@
 # Usage:  bash scripts/deploy.sh
 #         (run from the repository root)
 #
+# Production Standard Ports:
+#   - Web Dashboard & API : Port 80
+#   - ML AI Microservice  : Port 8001
+#   - MySQL 8.4 Database  : Port 3306
+#
 # 13-Step Automated Pipeline:
 #   1. Detect Dynamic IP (Public / LAN Fallback)
 #   2. Pre-flight System & Resource Check (OS, CPU, RAM, Disk)
 #   3. Git Working Tree Sanity Check & Pull
 #   4. Write / Patch .env Configuration
-#   5. Stop Old Containers
+#   5. Stop Old Containers & Clear Name Conflicts
 #   6. Build & Start All Containers (MySQL, Web, ML)
 #   7. Wait for MySQL Health (:3306)
 #   8. Run Database Migrations & Seeders
-#   9. Wait for ML Microservice Readiness (:9050 / :9021)
-#  10. Wait for WebApp Server Readiness (:80 / :9002)
+#   9. Wait for ML Microservice Readiness (:8001)
+#  10. Wait for WebApp Server Readiness (:80)
 #  11. Container Permissions Enforcement (web/writable)
 #  12. Housekeeping, Docker Storage & Cache Clearing
 #  13. Clean Status Summary & Endpoints
@@ -100,11 +105,9 @@ fi
 if [ -z "$DETECTED_IP" ]; then
     DETECTED_IP=$(curl -s --max-time 5 icanhazip.com 2>/dev/null | tr -d '[:space:]' || true)
 fi
-# Fallback to local LAN IP if offline or no external public route
 if [ -z "$DETECTED_IP" ]; then
     DETECTED_IP=$(hostname -I 2>/dev/null | awk '{print $1}' | tr -d '[:space:]' || true)
 fi
-# Ultimate fallback to localhost
 if [ -z "$DETECTED_IP" ]; then
     DETECTED_IP="127.0.0.1"
 fi
@@ -113,7 +116,6 @@ log "Dynamic Host IP: $DETECTED_IP"
 # ── 2. Pre-flight System & Resource Check ─────────────────────
 section "2. Pre-flight Disk & RAM Check"
 
-# OS Specifications
 if [ -f /etc/os-release ]; then
     . /etc/os-release
     OS_PRETTY="${PRETTY_NAME:-$NAME}"
@@ -123,12 +125,10 @@ fi
 KERNEL="$(uname -r)"
 ARCH="$(uname -m)"
 
-# CPU Specifications
 CPU_CORES=$(nproc 2>/dev/null || echo "1")
 CPU_MODEL=$(grep -m1 "model name" /proc/cpuinfo 2>/dev/null | sed -E "s/^model name\s*:\s*//" | tr -s " " || echo "Generic CPU")
 [ -z "$CPU_MODEL" ] && CPU_MODEL="Generic CPU"
 
-# RAM Specifications
 TOTAL_MEM_MB=$(free -m | awk '/Mem:/ {print $2}')
 USED_MEM_MB=$(free -m | awk '/Mem:/ {print $3}')
 FREE_MEM_MB=$(free -m | awk '/Mem:/ {print ($7 != "" ? $7 : $4)}')
@@ -138,7 +138,8 @@ TOTAL_MEM_GB=$(awk -v m="$TOTAL_MEM_MB" 'BEGIN {printf "%.2f GB", m/1024}')
 USED_MEM_GB=$(awk -v m="$USED_MEM_MB" 'BEGIN {printf "%.2f GB", m/1024}')
 FREE_MEM_GB=$(awk -v m="$FREE_MEM_MB" 'BEGIN {printf "%.2f GB", m/1024}')
 
-# Disk Specifications on /
+SWAP_TOTAL_MB=$(free -m | awk '/Swap:/ {print $2}')
+
 DISK_LINE=$(df -h / | awk 'NR>1 {print $(NF-4), $(NF-3), $(NF-2), $(NF-1), $(NF)}')
 DISK_TOTAL=$(echo "$DISK_LINE" | awk '{print $1}')
 DISK_USED=$(echo "$DISK_LINE" | awk '{print $2}')
@@ -150,11 +151,18 @@ log "OS Environment   : ${OS_PRETTY} (${ARCH}, kernel ${KERNEL})"
 log "CPU Architecture : ${CPU_MODEL} (${CPU_CORES} vCPU)"
 log "Available Memory : ${FREE_MEM_MB}MB free of ${TOTAL_MEM_MB}MB"
 log "RAM Breakdown    : Total: ${TOTAL_MEM_GB} | Used: ${USED_MEM_GB} (${MEM_PCT}%) | Free: ${FREE_MEM_GB} (${MEM_FREE_PCT}%)"
+log "Swap Space       : ${SWAP_TOTAL_MB}MB total swap"
 log "Available Disk   : ${DISK_FREE_MB}MB free on /"
 log "Disk Breakdown   : Total: ${DISK_TOTAL} | Used: ${DISK_USED} (${DISK_PCT}) | Free: ${DISK_FREE} (${DISK_FREE_MB}MB)"
 
-if [ "$FREE_MEM_MB" -lt 2500 ]; then
-    warn "Free RAM is below 2.5 GB (${FREE_MEM_MB}MB). Local LLM inference may experience memory pressure."
+if [ "$SWAP_TOTAL_MB" -lt 1024 ] && [ "$FREE_MEM_MB" -lt 3500 ]; then
+    warn "Swap space is low (${SWAP_TOTAL_MB}MB). Creating a 4GB swapfile to prevent OOM during LLM inference..."
+    sudo fallocate -l 4G /swapfile 2>/dev/null || sudo dd if=/dev/zero of=/swapfile bs=1M count=4096 2>/dev/null || true
+    sudo chmod 600 /swapfile 2>/dev/null || true
+    sudo mkswap /swapfile 2>/dev/null || true
+    sudo swapon /swapfile 2>/dev/null || true
+    grep -q "/swapfile" /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null 2>&1 || true
+    log "4 GB swapfile created and enabled"
 fi
 
 if [ "$DISK_FREE_MB" -lt 8000 ]; then
@@ -172,7 +180,6 @@ if [ -d ".git" ]; then
         warn "Uncommitted local changes detected in working tree. Stashing safely..."
         git stash save "deploy-auto-stash-$(date +%Y%m%d%H%M%S)" >/dev/null 2>&1 || true
     fi
-    # If a remote exists, pull latest
     if git remote | grep -q "origin"; then
         log "Pulling latest changes from origin..."
         git pull origin main 2>&1 | tail -5 || warn "Could not pull from origin, continuing with local code..."
@@ -188,7 +195,6 @@ if [ ! -f ".env" ]; then
         || err ".env missing and no .env.example found — cannot continue"
 fi
 
-# Helper: upsert key=value in .env
 set_env() {
     local K="$1" V="$2"
     if grep -q "^${K}=" .env; then
@@ -200,36 +206,50 @@ set_env() {
     fi
 }
 
-# Resolve Ports
-WEB_PORT=$(grep "^WEB_PORT" .env 2>/dev/null | cut -d'=' -f2 | tr -d ' ' || echo "9002")
-[ -z "$WEB_PORT" ] && WEB_PORT="9002"
-ML_PORT=$(grep "^ML_MPESA_ANALYZER_API_PORT" .env 2>/dev/null | cut -d'=' -f2 | tr -d ' ' || echo "9021")
-[ -z "$ML_PORT" ] && ML_PORT="9021"
+# Resolve Ports (Default: 80 for WebApp, 8001 for ML, 3306 for MySQL)
+WEB_PORT=$(grep "^WEB_PORT" .env 2>/dev/null | cut -d'=' -f2 | tr -d ' ' || echo "80")
+[ -z "$WEB_PORT" ] && WEB_PORT="80"
+ML_PORT=$(grep "^ML_MPESA_ANALYZER_API_PORT" .env 2>/dev/null | cut -d'=' -f2 | tr -d ' ' || echo "8001")
+[ -z "$ML_PORT" ] && ML_PORT="8001"
 
-# Dynamically patch baseURL with the detected host IP and WEB_PORT
-set_env "app.baseURL" "http://${DETECTED_IP}:${WEB_PORT}/"
-set_env "CI_ENVIRONMENT" "development"
+# Format baseURL cleanly (omit :80 if standard HTTP)
+if [ "$WEB_PORT" = "80" ]; then
+    BASE_URL="http://${DETECTED_IP}/"
+else
+    BASE_URL="http://${DETECTED_IP}:${WEB_PORT}/"
+fi
+
+set_env "WEB_PORT" "$WEB_PORT"
+set_env "ML_MPESA_ANALYZER_API_PORT" "$ML_PORT"
+set_env "MYSQL_HOST_PORT" "3306"
+set_env "app.baseURL" "$BASE_URL"
+set_env "CI_ENVIRONMENT" "production"
 set_env "DB_HOST" "mysql"
 set_env "DB_PORT" "3306"
 set_env "DB_NAME" "db_mpesa_analyzer"
 set_env "DB_USER" "root"
 set_env "ML_BACKEND_URL" "http://ml-mpesa-analyzer:9050"
 
-log "app.baseURL               -> http://${DETECTED_IP}:${WEB_PORT}/"
+log "app.baseURL               -> ${BASE_URL}"
+log "WEB_PORT                  -> ${WEB_PORT} (Standard HTTP)"
+log "ML_PORT                   -> ${ML_PORT} (AI Microservice API)"
 log "ML_BACKEND_URL            -> http://ml-mpesa-analyzer:9050 (Internal network)"
 log "DB_HOST                   -> mysql (Docker internal)"
 
-# ── 5. Stop Old Containers ────────────────────────────────────
-section "5. Stopping Old Containers"
-docker compose down --remove-orphans 2>&1 | tail -3
-log "Old containers stopped and networks cleaned"
+# ── 5. Stop Old Containers & Clear Conflicts ──────────────────
+section "5. Stopping Old Containers & Clearing Name Conflicts"
+docker compose down --remove-orphans 2>&1 | tail -3 || true
+
+# Explicitly remove legacy container or network names if conflicting
+docker rm -f shared-mysql mpesa-analyzer-webapp ml-mpesa-analyzer 2>/dev/null || true
+docker network rm hosts-shared-network 2>/dev/null || true
+log "Old containers stopped and explicit name conflicts cleared"
 
 # ── 6. Build & Start Containers ───────────────────────────────
 section "6. Building & Starting All Containers"
 docker compose up --build -d 2>&1 | tail -20
 log "Containers created and started (mysql, web, ml)"
 
-# Display Docker images and container runtime sizes
 echo ""
 echo -e "   ${BOLD}Docker Image Sizes:${RESET}"
 docker images --filter "reference=*mpesa*" --filter "reference=*mysql*" --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" 2>/dev/null | sed 's/^/   /' || true
@@ -271,8 +291,8 @@ else
     warn "Skipping migrations and seeding because MySQL is not yet healthy"
 fi
 
-# ── 9. Wait for ML Microservice Readiness (:9050 / :9021) ─────
-section "9. Waiting for ML Microservice Ready (:9021)"
+# ── 9. Wait for ML Microservice Readiness (:8001) ─────────────
+section "9. Waiting for ML Microservice Ready (:${ML_PORT})"
 printf "   Checking ml-mpesa-analyzer status"
 ML_READY=false
 for i in $(seq 1 45); do
@@ -288,8 +308,8 @@ for i in $(seq 1 45); do
 done
 $ML_READY || { echo ""; warn "ML microservice took longer to initialize. Check: docker compose logs ml"; }
 
-# ── 10. Wait for Web Server Readiness (:80 / :9002) ───────────
-section "10. Waiting for Web Server Ready (:${WEB_PORT})"
+# ── 10. Wait for Web Server Readiness (:80) ───────────────────
+section "10. Waiting for WebApp Server Ready (:${WEB_PORT})"
 printf "   Waiting for WebApp"
 WEB_READY=false
 for i in $(seq 1 25); do
@@ -339,11 +359,11 @@ FINAL_WEB=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${WEB_PORT}/
 if [ "$FINAL_WEB" = "200" ]; then
     log "PLATFORM IS LIVE — ALL SYSTEMS OPERATIONAL"
     echo ""
-    echo -e "  ${BOLD}WebApp Dashboard :${RESET}  http://${DETECTED_IP}:${WEB_PORT}/"
-    echo -e "  ${BOLD}Admin ML Config  :${RESET}  http://${DETECTED_IP}:${WEB_PORT}/admin/ml"
+    echo -e "  ${BOLD}WebApp Dashboard :${RESET}  ${BASE_URL}"
+    echo -e "  ${BOLD}Admin ML Config  :${RESET}  ${BASE_URL}admin/ml"
     echo -e "  ${BOLD}ML API Swagger   :${RESET}  http://${DETECTED_IP}:${ML_PORT}/docs"
     echo -e "  ${BOLD}ML Health Probe  :${RESET}  http://${DETECTED_IP}:${ML_PORT}/health"
-    echo -e "  ${BOLD}WebApp Health    :${RESET}  http://${DETECTED_IP}:${WEB_PORT}/health"
+    echo -e "  ${BOLD}WebApp Health    :${RESET}  ${BASE_URL}health"
     echo ""
     finish_deployment
 

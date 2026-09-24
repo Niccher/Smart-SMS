@@ -14,7 +14,7 @@ flowchart TD
   end
 
   subgraph Boundary 1: Web Ingestion & Dashboard
-    Web[CodeIgniter 4 Gateway<br/>Port 9002]
+    Web[CodeIgniter 4 Gateway<br/>Port 80]
   end
 
   subgraph Boundary 2: Internal Docker Network

@@ -35,7 +35,7 @@ php spark db:seed MLControlsSeeder
 
 ### Launch Development Server
 ```bash
-php spark serve --host 0.0.0.0 --port 9002
+php spark serve --host 0.0.0.0 --port 8000
 ```
 
 ---

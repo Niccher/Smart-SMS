@@ -18,7 +18,7 @@ This runbook describes the procedure for evaluating, staging, and activating alt
 ## 2. Procedure A: Via Admin Console (Zero-CLI)
 
 1. **Access Model Management**:
-   Open http://localhost:9002/admin/ml/models in the WebApp dashboard.
+   Open http://localhost/admin/ml/models in the WebApp dashboard.
 2. **Upload New Model**:
    Upload the new `.gguf` file via the web interface. The file is streamed in 1 MB chunks to `models/` inside the container.
 3. **Inspect GGUF Metadata**:

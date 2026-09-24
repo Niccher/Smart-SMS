@@ -13,12 +13,12 @@ Software engineers: [docs/README.md](docs/README.md).
 
 | Component | URL / Port | Expected Response / Check |
 |-----------|------------|---------------------------|
-| **Web Dashboard** | http://localhost:9002 | Login / Dashboard interface |
-| **WebApp Health** | http://localhost:9002/health | HTTP 200 OK |
-| **ML Microservice** | http://localhost:9021 | FastAPI root / API endpoint |
-| **ML Health Check** | http://localhost:9021/health | `{"status": "ok", "db_configured": true}` |
-| **ML Swagger UI** | http://localhost:9021/docs | Interactive OpenAPI documentation |
-| **MySQL Server** | localhost:9306 | Direct database access port |
+| **Web Dashboard** | http://localhost | Login / Dashboard interface |
+| **WebApp Health** | http://localhost/health | HTTP 200 OK |
+| **ML Microservice** | http://localhost:8001 | FastAPI root / API endpoint |
+| **ML Health Check** | http://localhost:8001/health | `{"status": "ok", "db_configured": true}` |
+| **ML Swagger UI** | http://localhost:8001/docs | Interactive OpenAPI documentation |
+| **MySQL Server** | localhost:3306 | Direct database access port |
 
 ---
 
@@ -57,8 +57,8 @@ This 13-step script automatically detects your dynamic IP, verifies system RAM/d
    ```
 3. Verify health checks:
    ```bash
-   curl http://localhost:9002/health
-   curl http://localhost:9021/health
+   curl http://localhost/health
+   curl http://localhost:8001/health
    ```
 4. Stop the stack when done:
    ```bash
@@ -71,10 +71,10 @@ This 13-step script automatically detects your dynamic IP, verifies system RAM/d
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `WEB_PORT` | `9002` | Host port for the WebApp dashboard |
-| `ML_MPESA_ANALYZER_API_PORT` | `9021` | Host port for FastAPI microservice |
-| `MYSQL_HOST_PORT` | `9306` | External port for MySQL 8.4 |
-| `CI_ENVIRONMENT` | `development` | CodeIgniter environment mode |
+| `WEB_PORT` | `80` | Host port for the WebApp dashboard |
+| `ML_MPESA_ANALYZER_API_PORT` | `8001` | Host port for FastAPI microservice |
+| `MYSQL_HOST_PORT` | `3306` | External port for MySQL 8.4 |
+| `CI_ENVIRONMENT` | `production` | CodeIgniter environment mode |
 | `LLM_ENGINE` | `local` | Inference engine (`local` or `external`) |
 | `SUPERADMIN_EMAIL` | `superadmin@mpesa-analyzer.local` | Default admin email seeded at boot |
 | `SUPERADMIN_PASSWORD` | `change_this_secure_password_123!` | Initial administrator password |
@@ -85,7 +85,7 @@ Full environment variable reference: [docs/user/configuration.md](docs/user/conf
 
 ## Something Went Wrong?
 
-- **Port in use (9002, 9021, 9306)**: Adjust the respective port in `.env`.
+- **Port in use (80, 8001, 3306)**: Adjust the respective port in `.env`.
 - **MySQL container unhealthy**: Check logs with `docker compose logs mysql`.
 - **ML container fails health check**: Ensure the GGUF model exists or check `docker compose logs ml`.
 - **Web 500 error**: Verify `web/writable/` permissions: `chmod -R 775 web/writable`.

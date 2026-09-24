@@ -4,10 +4,11 @@
 # Usage:
 #   docker compose up --build -d
 #
-# Services:
-#   - mysql:              Port 9306 (internal 3306)
-#   - web (CodeIgniter):  Port 9002
-#   - ml  (FastAPI + LLM): Port 9021 (API) & 9022 (llama-server)
+# Production Standard Ports:
+#   - web:   Port 80   (HTTP Web Dashboard & Mobile Gateway)
+#   - ml:    Port 8001 (FastAPI Microservice & OpenAPI Docs)
+#   - llama: Port 8080 (llama.cpp server)
+#   - mysql: Port 3306 (MySQL 8.4 Relational Database)
 # ─────────────────────────────────────────────────────────────
 
 services:
@@ -15,7 +16,7 @@ services:
     image: mysql:8.4
     container_name: shared-mysql
     ports:
-      - "${MYSQL_HOST_PORT:-9306}:3306"
+      - "${MYSQL_HOST_PORT:-3306}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
       MYSQL_DATABASE: ${DB_NAME:-db_mpesa_analyzer}
@@ -38,7 +39,7 @@ services:
     image: mpesa-analyzer-web:latest
     container_name: mpesa-analyzer-webapp
     ports:
-      - "${WEB_PORT:-9002}:80"
+      - "${WEB_PORT:-80}:80"
     volumes:
       - ./web:/var/www/html
     environment:
@@ -72,8 +73,8 @@ services:
     image: mpesa-analyzer-ml:latest
     container_name: ml-mpesa-analyzer
     ports:
-      - "${ML_MPESA_ANALYZER_API_PORT:-9021}:9050"
-      - "${ML_MPESA_ANALYZER_LLAMA_PORT:-9022}:8080"
+      - "${ML_MPESA_ANALYZER_API_PORT:-8001}:9050"
+      - "${ML_MPESA_ANALYZER_LLAMA_PORT:-8080}:8080"
     volumes:
       - ./ml/app:/app/app
       - ./ml/models:/models

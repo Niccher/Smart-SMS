@@ -6,7 +6,7 @@ Common operational issues and remedies when running the multi-container monorepo
 
 ## 1. WebApp Returns 500 or Blank Screen
 
-**Symptom**: `http://localhost:9002` displays a 500 server error or blank screen.
+**Symptom**: `http://localhost` displays a 500 server error or blank screen.
 
 **Remedy**:
 1. Check WebApp container logs:
@@ -21,15 +21,15 @@ Common operational issues and remedies when running the multi-container monorepo
 
 ---
 
-## 2. Port Conflict on 9002, 9021, or 9306
+## 2. Port Conflict on 80, 8001, or 3306
 
 **Symptom**: `bind: address already in use` during `docker compose up` or `deploy.sh`.
 
 **Remedy**:
 Update the conflicting port in your `.env` file:
-- `WEB_PORT=9003`
-- `ML_MPESA_ANALYZER_API_PORT=9023`
-- `MYSQL_HOST_PORT=9307`
+- `WEB_PORT=8081`
+- `ML_MPESA_ANALYZER_API_PORT=8002`
+- `MYSQL_HOST_PORT=3307`
 Then restart: `docker compose up -d` or `bash scripts/deploy.sh`.
 
 ---
@@ -79,5 +79,5 @@ Then restart: `docker compose up -d` or `bash scripts/deploy.sh`.
 2. Navigate to **Admin -> ML Config** and verify that **Auto-Jobs** is switched to **Enabled**.
 3. Alternatively, trigger an on-demand batch run:
    ```bash
-   curl -X POST http://localhost:9021/process/trigger
+   curl -X POST http://localhost:8001/process/trigger
    ```

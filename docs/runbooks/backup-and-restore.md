@@ -50,5 +50,5 @@ docker exec -i mpesa-analyzer-mysql mysql \
 
 After restoration, verify system health:
 ```bash
-curl -f http://localhost:9002/health
+curl -f http://localhost/health
 ```\n

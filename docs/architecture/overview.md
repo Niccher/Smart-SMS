@@ -17,9 +17,9 @@ flowchart TD
   end
 
   subgraph Monorepo Infrastructure: MPesa
-    WebApp[Web & API Gateway<br/>web/<br/>Port 9002]
-    ML[ML Intelligence Service<br/>ml/<br/>Port 9021 / 9022]
-    MySQL[(Shared MySQL 8.4<br/>db_mpesa_analyzer<br/>Port 3306 / 9306)]
+    WebApp[Web & API Gateway<br/>web/<br/>Port 80]
+    ML[ML Intelligence Service<br/>ml/<br/>Port 8001 / 8080]
+    MySQL[(Shared MySQL 8.4<br/>db_mpesa_analyzer<br/>Port 3306)]
   end
 
   User -->|Reads SMS / Views UI| App

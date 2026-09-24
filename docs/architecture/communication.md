@@ -8,7 +8,7 @@ This document details transport protocols, sequences, and security contracts bet
 
 | Source | Destination | Transport | Auth Mechanism | Dev URL | Purpose |
 |--------|-------------|-----------|----------------|---------|---------|
-| **Android App** | WebApp API | HTTP POST | Bearer SHA-256 Token | `http://10.0.2.2:9002/api/v1/` | Payload upload, stats fetch, auth |
+| **Android App** | WebApp API | HTTP POST | Bearer SHA-256 Token | `http://10.0.2.2/api/v1/` | Payload upload, stats fetch, auth |
 | **WebApp** | ML Service | HTTP POST | Internal network | `http://ml-mpesa-analyzer:9050/` | Trigger user job, rescan, health |
 | **WebApp** | MySQL | TCP (3306) | User/Password | `mysql:3306` | Web queries, Shield auth, inserts |
 | **ML Service** | MySQL | TCP (3306) | User/Password | `mysql:3306` | Polling, canonical SMS updates |

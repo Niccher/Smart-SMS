@@ -12,9 +12,9 @@ To restart the WebApp container cleanly:
 docker compose restart webapp
 ```
 
-Verify the container is listening on port 9002:
+Verify the container is listening on port 80:
 ```bash
-curl -f http://localhost:9002/health
+curl -f http://localhost/health
 ```
 
 ---

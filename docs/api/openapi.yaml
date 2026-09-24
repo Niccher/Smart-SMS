@@ -4,9 +4,9 @@ info:
   description: Combined API contract for the M-Pesa Analyzer CodeIgniter 4 WebApp and FastAPI ML microservice.
   version: 1.4.0
 servers:
-  - url: http://localhost:9002/api/v1
+  - url: http://localhost/api/v1
     description: WebApp & Mobile API Gateway
-  - url: http://localhost:9021
+  - url: http://localhost:8001
     description: ML Intelligence Microservice
 paths:
   /health:

@@ -7,12 +7,13 @@ hardcoded defaults.
 Usage:
     python3 seed_prompts.py
 """
+import os
 import sys
 import json
 import urllib.request
 import urllib.error
 
-ML_BASE = "http://localhost:9022"  # ML service internal port
+ML_BASE = os.getenv("ML_BASE", "http://localhost:8001")  # ML service API port
 
 # ── Updated prompts ──────────────────────────────────────────────────────────
 
