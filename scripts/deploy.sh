@@ -232,6 +232,14 @@ if [ "$CURR_MYSQL" = "9306" ] || [ -z "$CURR_MYSQL" ]; then
     set_env "MYSQL_HOST_PORT" "3306"
 fi
 
+# Auto-patch MPESA_CRYPT_KEY if using placeholder or missing
+CURR_KEY=$(grep "^MPESA_CRYPT_KEY" .env 2>/dev/null | cut -d'=' -f2 | tr -d " '\"" || true)
+if [ "$CURR_KEY" = "0123456789abcdef0123456789abcdef" ] || [ -z "$CURR_KEY" ]; then
+    set_env "MPESA_CRYPT_KEY" "'a:r2yt>N3_\\\\Py,f='"
+    set_env "MPESA_CRYPT_IV" "'[M[@_w[F4a>yQsJW'"
+    log "Synchronized MPESA_CRYPT_KEY with Android app cryptographic specifications"
+fi
+
 # Resolve Ports (Default: 80 for WebApp, 8001 for ML, 3306 for MySQL)
 WEB_PORT=$(grep "^WEB_PORT" .env 2>/dev/null | cut -d'=' -f2 | tr -d ' ' || echo "80")
 [ -z "$WEB_PORT" ] && WEB_PORT="80"
