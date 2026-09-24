@@ -35,7 +35,7 @@ class Filters extends BaseConfig
         'before' => [
             'invalidchars',
             'csrf' => ['except' => ['api/v1/*', 'process/*', 'health', 'ml-backend', 'admin/*', 'dashboard/rescan', 'dashboard/rescan/*']],
-            'session' => ['except' => ['/', '/home', 'android-app', 'ml-backend', 'setup', 'faq', 'auth/*', 'process/*', 'login', 'register', 'auth_login', 'auth_register', 'api/v1/*']],
+            'session' => ['except' => ['/', '/home', 'health', 'health/*', 'android-app', 'ml-backend', 'setup', 'faq', 'auth/*', 'process/*', 'login', 'register', 'auth_login', 'auth_register', 'api/v1/*']],
             'maintenance' => ['except' => [
                 'login', 'register', 'logout', 'magic-link', 'magic-link/*',
                 'auth', 'auth/*',

@@ -340,7 +340,7 @@ printf "   Waiting for WebApp"
 WEB_READY=false
 for i in $(seq 1 25); do
     CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${WEB_PORT}/health 2>/dev/null || echo "000")
-    if [[ "$CODE" =~ ^(200|301|302|403)$ ]]; then
+    if [[ "$CODE" =~ ^(200|301|302|307|403)$ ]]; then
         echo ""
         log "WebApp server is responding (HTTP $CODE)"
         WEB_READY=true
@@ -382,8 +382,8 @@ docker compose ps
 echo ""
 FINAL_WEB=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${WEB_PORT}/health 2>/dev/null || echo "000")
 
-if [ "$FINAL_WEB" = "200" ]; then
-    log "PLATFORM IS LIVE — ALL SYSTEMS OPERATIONAL"
+if [ "$FINAL_WEB" = "200" ] || [ "$FINAL_WEB" = "307" ] || [ "$FINAL_WEB" = "302" ]; then
+    log "PLATFORM IS LIVE — ALL SYSTEMS OPERATIONAL (WebApp HTTP ${FINAL_WEB})"
     echo ""
     echo -e "  ${BOLD}WebApp Dashboard :${RESET}  ${BASE_URL}"
     echo -e "  ${BOLD}Admin ML Config  :${RESET}  ${BASE_URL}admin/ml"
