@@ -34,7 +34,17 @@ class Filters extends BaseConfig
     public array $globals = [
         'before' => [
             'invalidchars',
-            'csrf' => ['except' => ['api/v1/*', 'process/*', 'health', 'ml-backend', 'admin/*', 'dashboard/rescan', 'dashboard/rescan/*']],
+            'csrf' => ['except' => [
+                'api/v1/*',
+                'process/*',
+                'health',
+                'ml-backend',
+                'admin/*',
+                'dashboard/rescan',
+                'dashboard/rescan/*',
+                'dashboard/blocklist/*',
+                'dashboard/history/*',
+            ]],
             'session' => ['except' => ['/', '/home', 'health', 'health/*', 'android-app', 'ml-backend', 'setup', 'faq', 'auth/*', 'process/*', 'login', 'register', 'auth_login', 'auth_register', 'api/v1/*']],
             'maintenance' => ['except' => [
                 'login', 'register', 'logout', 'magic-link', 'magic-link/*',

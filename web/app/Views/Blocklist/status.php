@@ -289,13 +289,23 @@ document.getElementById('btnDeleteUnwanted')?.addEventListener('click', function
     }).then((result) => {
         if (result.isConfirmed) {
             this.disabled = true;
+            const data = new FormData();
+            data.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
             fetch('<?= base_url('dashboard/blocklist/delete-unwanted-sms') ?>', {
                 method: 'POST',
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                    'X-Requested-With': 'XMLHttpRequest',
+                    '<?= csrf_header() ?>': '<?= csrf_hash() ?>'
+                },
+                body: data
             })
-            .then(r => r.json())
+            .then(async r => {
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok) {
+                    throw new Error(data.message || ('Server error: ' + r.status));
+                }
+                return data;
+            })
             .then(data => {
                 if (data.status === 'success') {
                     Swal.fire({

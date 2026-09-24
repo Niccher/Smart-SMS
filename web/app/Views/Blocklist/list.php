@@ -195,9 +195,24 @@ document.getElementById('senderSearch').addEventListener('input', function() {
 
 function postSenders(url, senders, msg) {
     const data = new FormData();
+    data.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
     senders.forEach(s => data.append('senders[]', s));
-    return fetch(url, { method: 'POST', body: data })
-        .then(r => r.json()).then(res => {
+    return fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            '<?= csrf_header() ?>': '<?= csrf_hash() ?>'
+        },
+        body: data
+    })
+        .then(async r => {
+            const res = await r.json().catch(() => ({}));
+            if (!r.ok) {
+                throw new Error(res.message || ('Server error: ' + r.status));
+            }
+            return res;
+        })
+        .then(res => {
             if (res.status === 'success') {
                 Swal.fire({
                     icon: 'success',

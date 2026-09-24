@@ -304,13 +304,15 @@ document.querySelectorAll('.btn-stop-job').forEach(btn => {
         
         this.disabled = true;
         const formData = new FormData();
+        formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
         formData.append('job_id', jobId);
         
         fetch('<?= base_url('dashboard/history/jobs/stop') ?>', {
             method: 'POST',
             body: formData,
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                '<?= csrf_header() ?>': '<?= csrf_hash() ?>'
             }
         })
         .then(response => response.json())
