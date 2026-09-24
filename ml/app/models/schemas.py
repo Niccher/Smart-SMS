@@ -142,3 +142,24 @@ class ModelDownloadRequest(BaseModel):
     filename: Optional[str] = None
     hf_token: Optional[str] = None
 
+
+# ── Chat & AI Assistant ─────────────────────────────────────
+
+
+class ChatMessage(BaseModel):
+    role: str = "user"  # "system" | "user" | "assistant"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    user_id: str
+    message: str
+    history: list[ChatMessage] = []
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    latency_ms: int
+    tokens_used: int = 0
+
+

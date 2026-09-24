@@ -77,6 +77,54 @@ paths:
                   status:
                     type: string
                     example: starting
+  /api/v1/chat:
+    post:
+      summary: Conversational AI financial assistant
+      description: Contextual financial advice query with injected user spending and loan metrics.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - message
+              properties:
+                user_id:
+                  type: string
+                  example: "4"
+                message:
+                  type: string
+                  example: "How much did I spend this month?"
+                history:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        example: "user"
+                      content:
+                        type: string
+                        example: "Hello"
+      responses:
+        '200':
+          description: Financial assistant response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reply:
+                    type: string
+                    example: "This month, you spent KES 14,200 across 23 transactions."
+                  latency_ms:
+                    type: integer
+                    example: 340
+                  tokens_used:
+                    type: integer
+                    example: 185
 components:
   securitySchemes:
     BearerAuth:

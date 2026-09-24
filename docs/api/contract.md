@@ -81,6 +81,7 @@ The FastAPI service exposes autonomous batch processing, status monitoring, and 
 | Endpoint | Method | Description |
 |---|---|---|
 | `/health` | GET | Liveness probe returning model and database connection status. |
+| `/api/v1/chat` | POST | Conversational AI assistant query with dynamic user financial history injection. |
 | `/process/trigger` | POST | Manually trigger one processing cycle across all unprocessed SMS. |
 | `/process/for-user/{user_id}` | POST | Trigger asynchronous LLM processing for a specific user ID. |
 | `/process/db` | POST | Alias for `/process/trigger`. |

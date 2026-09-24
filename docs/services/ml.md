@@ -54,4 +54,16 @@ Unknown senders are sent to the LLM with up to 10 sample messages to classify wh
 Prompts are managed by `prompt_manager.py`:
 - Checks `tbl_LLM_Prompts` for an active override by key (`classify_sender`, `extract_batch`).
 - If none is active, falls back to the hardcoded default in `prompt_templates.py`.
-- Admin API (`POST /admin/prompts`) saves new versions without overwriting historical templates.\n
+- Admin API (`POST /admin/prompts`) saves new versions without overwriting historical templates.
+
+---
+
+## 5. Conversational Financial Intelligence (`/api/v1/chat`)
+
+The `ml/` microservice exposes a contextual assistant endpoint for client applications:
+
+- **Endpoint**: `POST /api/v1/chat`
+- **Context Injection**: Automatically calls `fetch_user_financial_aggregation(user_id)` to inject the user's spending totals, income, and transaction counts into the system prompt.
+- **Language Support**: Native support for English and Kenyan Sheng financial dialect.
+- **Audit & Telemetry**: Every interaction logs latency and token usage into `tbl_LLM_Calls`.
+\n

@@ -27,6 +27,7 @@ from app.db.queries import (
 )
 from app.models.schemas import HealthResponse, ProcessingJobResponse, SenderClassification
 from app.routers.admin import router as admin_router
+from app.routers.chat import router as chat_router
 from app.services.classifier import SenderClassifier
 from app.services.extractor import MessageExtractor
 from app.services.llm_service import llm
@@ -509,6 +510,7 @@ if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 app.include_router(admin_router)
+app.include_router(chat_router)
 
 
 # ── Endpoints ─────────────────────────────────────────────

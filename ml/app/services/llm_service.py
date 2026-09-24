@@ -299,6 +299,10 @@ class LLMService:
         parsed = self._safe_parse_json(call_result.content, expect_list=True)
         return parsed, call_result
 
+    async def chat(self, messages: list[dict]) -> LLMCallResult:
+        """Execute chat completion across local or external LLM providers."""
+        return await self._call_llm(messages, response_format=None)
+
     async def close(self):
         if self._client and not self._client.is_closed:
             await self._client.aclose()
