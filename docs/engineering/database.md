@@ -136,5 +136,6 @@ Operational rescan procedure: [docs/runbooks/full-rescan.md](../runbooks/full-re
 | `tbl_Category_Rules` | Table | Custom regex keyword-to-category mapping rules defined by users. |
 | `tbl_Budgets` | Table | User-defined periodic spending budgets and limit thresholds. |
 | `tbl_Backups` | Table | Metadata catalog for automated and manual database backups. |
+| `tbl_Chat_Messages` | Table | Persistent multi-turn conversations with AI Financial Assistant, tracking message text, client platform (`webapp`/`mobile`), device UA, and LLM latency. |
 | `tbl_users` | Table | Legacy user account records for backward compatibility. |
 | `auth_*`, `users` | Tables | CodeIgniter Shield tables managing identities, sessions, tokens, and RBAC groups. |

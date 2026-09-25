@@ -143,12 +143,14 @@ $systemVersion = $versionData['version'] ?? '3.5.0';
                         <div class="text-center p-4">
                             <div class="d-flex justify-content-center gap-2 mb-3 flex-wrap">
                                 <span class="badge bg-primary bg-opacity-10 text-primary border px-3 py-2"><i class="fa-brands fa-android me-1"></i> CameraX QR Pairing</span>
-                                <span class="badge bg-success bg-opacity-10 text-success border px-3 py-2"><i class="fa-solid fa-brain me-1"></i> Qwen 2.5 Local LLM</span>
+                                <span class="badge bg-success bg-opacity-10 text-success border px-3 py-2"><i class="fa-solid fa-brain me-1"></i> Qwen 2.5 / DeepSeek</span>
+                                <span class="badge bg-warning bg-opacity-10 text-warning border px-3 py-2"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> "Ask My M-Pesa" AI Chat</span>
+                                <span class="badge bg-danger bg-opacity-10 text-danger border px-3 py-2"><i class="fa-solid fa-bolt me-1"></i> Redis 7 Accelerated</span>
                                 <span class="badge bg-info bg-opacity-10 text-info border px-3 py-2"><i class="fa-solid fa-chart-line me-1"></i> Live Telemetry</span>
                             </div>
                             <i class="fa-solid fa-chart-pie fa-5x text-primary opacity-50 mb-3"></i>
                             <h5 class="fw-bold mb-1">Autonomous Financial Ledger</h5>
-                            <p class="text-muted small mb-0">From raw encrypted SMS to structured ledger, charts, and budget insights.</p>
+                            <p class="text-muted small mb-0">From raw encrypted SMS to structured ledger, charts, and conversational AI insights.</p>
                         </div>
                     </div>
                 </div>
@@ -224,6 +226,67 @@ $systemVersion = $versionData['version'] ?? '3.5.0';
                             <span class="text-primary fw-semibold small">Create Account <i class="fa-solid fa-arrow-right ms-1"></i></span>
                         </div>
                     </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Spotlight: "Ask My M-Pesa" AI Financial Assistant -->
+    <section class="py-5 bg-light border-top border-bottom">
+        <div class="container py-4">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6">
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 mb-3 fw-semibold">
+                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Conversational Financial Intelligence
+                    </span>
+                    <h2 class="section-title h1 mb-3">"Ask My M-Pesa" — In-App & Web AI Assistant</h2>
+                    <p class="lead text-muted mb-4" style="font-size: 1.1rem; line-height: 1.7;">
+                        Ask questions about your transactions in plain English or Sheng. The assistant automatically injects your real spending aggregates, Fuliza fees, recipient breakdowns, and budget goals to deliver instant personalized advice.
+                    </p>
+                    <div class="d-flex flex-column gap-2 mb-4">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="fa-solid fa-check text-success mt-1"></i>
+                            <span><strong>Multi-Turn Memory:</strong> Remembers context across questions and syncs persistent history between Android and WebApp.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="fa-solid fa-check text-success mt-1"></i>
+                            <span><strong>English & Sheng Native:</strong> Natural communication tailored for Kenyan mobile money phrasing.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="fa-solid fa-check text-success mt-1"></i>
+                            <span><strong>Affordability Check:</strong> Real-time assessment of upcoming purchases against expected cashflow.</span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <a href="<?= url_to('login') ?>" class="btn btn-primary">Try AI Assistant</a>
+                        <a href="<?= base_url('android-app') ?>" class="btn btn-outline-primary">Android Companion</a>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                        <div class="card-header bg-white border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="fa-solid fa-robot" style="font-size: 0.85rem;"></i>
+                                </div>
+                                <span class="fw-bold small">M-Pesa Smart Advisor</span>
+                            </div>
+                            <span class="badge bg-success-subtle text-success font-monospace small"><i class="fa-solid fa-circle me-1" style="font-size: 0.5rem;"></i>Active LLM</span>
+                        </div>
+                        <div class="card-body p-4 bg-light" style="font-size: 0.9rem;">
+                            <div class="d-flex justify-content-end mb-3">
+                                <div class="bg-primary text-white p-3 rounded-3 shadow-xs" style="max-width: 85%;">
+                                    Can I afford a KES 15,000 purchase this weekend based on my bills due?
+                                </div>
+                            </div>
+                            <div class="d-flex mb-2">
+                                <div class="bg-white text-dark p-3 rounded-3 shadow-xs border" style="max-width: 90%;">
+                                    <div class="fw-semibold text-primary mb-1 small">M-Pesa Smart Advisor</div>
+                                    Based on your current M-Pesa balance of <strong>KES 24,500</strong> and upcoming recurring utility payments totaling <strong>KES 6,200</strong>, you will have approximately <strong>KES 3,300</strong> remaining after a KES 15,000 expense. It fits within your budget, but leaves tight liquidity for unexpected Fuliza charges.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

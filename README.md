@@ -1,8 +1,8 @@
 # M-Pesa Analyzer Platform
 
-Full-stack financial analytics platform and mobile API gateway for M-Pesa transactions. Combines a CodeIgniter 4 web application, an autonomous Python FastAPI LLM intelligence microservice, and a shared MySQL 8.4 database to ingest, decrypt, classify, and visualize mobile money transactions.
+Full-stack financial analytics platform and mobile API gateway for M-Pesa transactions. Combines a CodeIgniter 4 web application, an autonomous Python FastAPI LLM intelligence microservice, a high-performance Redis 7 session & cache engine, and a shared MySQL 8.4 database to ingest, decrypt, classify, analyze, and chat with mobile money transactions.
 
-Stack: PHP 8.3 (CodeIgniter 4), Python 3.12 (FastAPI, llama.cpp, Qwen2.5), MySQL 8.4, Docker Compose
+Stack: PHP 8.3 (CodeIgniter 4), Python 3.12 (FastAPI, llama.cpp, Qwen2.5), Redis 7, MySQL 8.4, Docker Compose
 
 **If you only need to run the system, this page is enough.**  
 Software engineers: [docs/README.md](docs/README.md).
@@ -14,10 +14,12 @@ Software engineers: [docs/README.md](docs/README.md).
 | Component | URL / Port | Expected Response / Check |
 |-----------|------------|---------------------------|
 | **Web Dashboard** | http://localhost | Login / Dashboard interface |
+| **AI Financial Assistant** | http://localhost/dashboard/chat | Interactive AI Financial Chat |
 | **WebApp Health** | http://localhost/health | HTTP 200 OK |
 | **ML Microservice** | http://localhost:8001 | FastAPI root / API endpoint |
 | **ML Health Check** | http://localhost:8001/health | `{"status": "ok", "db_configured": true}` |
 | **ML Swagger UI** | http://localhost:8001/docs | Interactive OpenAPI documentation |
+| **Redis Cache** | localhost:6379 | In-memory session & cache store |
 | **MySQL Server** | localhost:3306 | Direct database access port |
 
 ---
@@ -74,6 +76,7 @@ This 13-step script automatically detects your dynamic IP, verifies system RAM/d
 | `WEB_PORT` | `80` | Host port for the WebApp dashboard |
 | `ML_MPESA_ANALYZER_API_PORT` | `8001` | Host port for FastAPI microservice |
 | `MYSQL_HOST_PORT` | `3306` | External port for MySQL 8.4 |
+| `REDIS_PORT` | `6379` | Host port for Redis 7 Cache |
 | `CI_ENVIRONMENT` | `production` | CodeIgniter environment mode |
 | `LLM_ENGINE` | `local` | Inference engine (`local` or `external`) |
 | `SUPERADMIN_EMAIL` | `superadmin@mpesa-analyzer.local` | Default admin email seeded at boot |

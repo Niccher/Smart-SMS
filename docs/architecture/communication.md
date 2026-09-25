@@ -9,14 +9,43 @@ This document details transport protocols, sequences, and security contracts bet
 | Source | Destination | Transport | Auth Mechanism | Dev URL | Purpose |
 |--------|-------------|-----------|----------------|---------|---------|
 | **Android App** | WebApp API | HTTP POST | Bearer SHA-256 Token | `http://10.0.2.2/api/v1/` | Payload upload, stats fetch, auth |
-| **WebApp** | ML Service | HTTP POST | Internal network | `http://ml-mpesa-analyzer:9050/` | Trigger user job, rescan, health |
+| **Android App** | WebApp Gateway | HTTP POST | Bearer / User Token | `http://10.0.2.2/api/v1/chat` | Conversational AI financial chat |
+| **WebApp** | ML Service | HTTP POST | Internal network | `http://ml-mpesa-analyzer:9050/` | Trigger user job, rescan, health, chat |
+| **WebApp** | Redis | TCP (6379) | Socket / Host | `redis:6379` | Session storage, cache, live telemetry |
 | **WebApp** | MySQL | TCP (3306) | User/Password | `mysql:3306` | Web queries, Shield auth, inserts |
-| **ML Service** | MySQL | TCP (3306) | User/Password | `mysql:3306` | Polling, canonical SMS updates |
+| **ML Service** | MySQL | TCP (3306) | User/Password | `mysql:3306` | Polling, canonical SMS updates, metrics |
 | **FastAPI** | llama-server | HTTP POST | Localhost loopback | `http://localhost:8080/v1` | OpenAI-compatible completions |
 
 ---
 
-## 2. End-to-End Ingestion & Processing Flow
+## 2. Conversational AI Financial Assistant Flow
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor User as User (Android or WebApp)
+  participant Client as Web/Mobile Client
+  participant Web as CI4 WebApp Gateway
+  participant DB as MySQL (tbl_Chat_Messages)
+  participant ML as FastAPI Service (:9050)
+  participant LLM as Active LLM (DeepSeek/Qwen/Gemini)
+
+  User->>Client: Ask question ("How much did I spend this month?")
+  Client->>Web: POST /dashboard/chat/send or /api/v1/chat
+  Web->>DB: INSERT user prompt (platform: webapp | mobile, device_info, app_version)
+  Web->>ML: POST /api/v1/chat {user_id, message, history}
+  ML->>DB: Query user transaction aggregates & monthly metrics
+  ML->>LLM: Generate response with injected spending context
+  LLM-->>ML: Financial advice response (Sheng/English)
+  ML-->>Web: Return {reply, model, latency_ms, tokens_used}
+  Web->>DB: INSERT assistant reply (platform: webapp | mobile, model, latency_ms)
+  Web-->>Client: JSON response
+  Client-->>User: Display markdown response with model & latency badges
+```
+
+---
+
+## 3. End-to-End Ingestion & Processing Flow
 
 ```mermaid
 sequenceDiagram
@@ -51,7 +80,7 @@ sequenceDiagram
 
 ---
 
-## 3. Security & Payload Protocol
+## 4. Security & Payload Protocol
 
 ### Dynamic IV AES-128-CBC
 1. **Client Streaming**: The Android app generates a 16-byte cryptographically secure random IV (`SecureRandom`).
@@ -61,7 +90,7 @@ sequenceDiagram
 
 ---
 
-## 4. API Error Body Convention
+## 5. API Error Body Convention
 
 All JSON API endpoints conform to a standardized error envelope:
 

@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: M-Pesa Analyzer Platform API
   description: Combined API contract for the M-Pesa Analyzer CodeIgniter 4 WebApp and FastAPI ML microservice.
-  version: 1.4.0
+  version: 3.5.0
 servers:
   - url: http://localhost/api/v1
     description: WebApp & Mobile API Gateway
@@ -125,6 +125,75 @@ paths:
                   tokens_used:
                     type: integer
                     example: 185
+  /api/v1/chat/info:
+    get:
+      summary: Active LLM model info
+      description: Returns active model name, provider, and operational status.
+      responses:
+        '200':
+          description: Model information.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: online
+                  model:
+                    type: string
+                    example: deepseek-chat
+                  provider:
+                    type: string
+                    example: DeepSeek
+  /api/v1/chat/history:
+    get:
+      summary: Fetch persistent chat history
+      description: Returns up to 50 previous dialogue turns for the user.
+      parameters:
+        - name: user_id
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Stored messages list.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  history:
+                    type: array
+                    items:
+                      type: object
+    delete:
+      summary: Clear user chat history
+      description: Wipes stored conversation history for the user.
+      parameters:
+        - name: user_id
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Chat history cleared.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  message:
+                    type: string
+                    example: Chat history cleared.
 components:
   securitySchemes:
     BearerAuth:

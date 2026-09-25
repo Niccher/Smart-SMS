@@ -59,7 +59,18 @@ Returns real-time processing counts for active extraction jobs.
 
 ---
 
-## 4. Account & Settings Endpoints
+## 4. Conversational AI Assistant & History Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|:------:|---------|
+| `/api/v1/chat` | POST | Conversational AI query gateway. Accepts `{user_id, message, history}` and proxies to ML assistant with spending context. Logs turn to `tbl_Chat_Messages` with platform tracking. |
+| `/api/v1/chat/info` | GET | Active model discovery endpoint. Returns status, model name (e.g. `deepseek-chat`, `qwen2.5`), and provider. |
+| `/api/v1/chat/history` | GET | Fetches stored multi-turn conversation history for the authenticated user from `tbl_Chat_Messages`. |
+| `/api/v1/chat/history` | DELETE | Clears all persistent chat dialogues for the authenticated user. |
+
+---
+
+## 5. Account & Settings Endpoints
 
 | Endpoint | Method | Purpose |
 |----------|:------:|---------|
@@ -72,7 +83,7 @@ Returns real-time processing counts for active extraction jobs.
 
 ---
 
-## 5. ML Microservice API Endpoints (`http://ml-mpesa-analyzer:9050`)
+## 6. ML Microservice API Endpoints (`http://ml-mpesa-analyzer:9050`)
 
 The FastAPI service exposes autonomous batch processing, status monitoring, and administration endpoints.
 

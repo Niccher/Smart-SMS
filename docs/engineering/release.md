@@ -8,9 +8,12 @@ This document tracks versioning and inter-component compatibility across the M-P
 
 | WebApp Version | Android App Version | ML Backend Version | Minimum API Level | Database Schema |
 |----------------|---------------------|--------------------|-------------------|-----------------|
-| **v3.2.0** | **v3.2.0** | **v3.2.0** | `/api/v1` | Migration 2026_09 |
-| **v3.1.0** | **v3.1.0** | **v3.1.0** | `/api/v1` | Migration 2026_08 |
-| **v3.0.0** | **v3.0.0** | **v3.0.0** | `/api/v1` | Migration 2026_05 |
+| **v3.5.0** | **v3.5.0 (build 4)** | **v3.5.0** | `/api/v1` | Migration `2026-09-25` (`tbl_Chat_Messages`) |
+| **v3.4.0** | **v3.4.0 (build 3)** | **v3.4.0** | `/api/v1` | Migration `2026-09-09` |
+| **v3.3.0** | **v3.3.0 (build 2)** | **v3.3.0** | `/api/v1` | Migration `2026-09-07` |
+| **v3.2.0** | **v3.2.0** | **v3.2.0** | `/api/v1` | Migration `2026-08` |
+| **v3.1.0** | **v3.1.0** | **v3.1.0** | `/api/v1` | Migration `2026-08` |
+| **v3.0.0** | **v3.0.0** | **v3.0.0** | `/api/v1` | Migration `2026-05` |
 
 ---
 

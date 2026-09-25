@@ -3,7 +3,7 @@ $versionData = [];
 if (file_exists(APPPATH . 'Config/version.json')) {
     $versionData = json_decode(file_get_contents(APPPATH . 'Config/version.json'), true);
 }
-$systemVersion = $versionData['version'] ?? '3.2.0';
+$systemVersion = $versionData['version'] ?? '3.5.0';
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
@@ -106,7 +106,7 @@ $systemVersion = $versionData['version'] ?? '3.2.0';
                     </span>
                     <h1 class="fw-800 mb-3" style="font-size: 2.75rem; font-weight: 800; letter-spacing: -0.5px;">Android Companion App</h1>
                     <p class="lead text-muted mb-4" style="line-height: 1.7;">
-                        The native companion app securely bridges your device SMS to the Mpesa Analyzer cloud. Equipped with <strong>CameraX vertical QR pairing</strong>, on-device SQLite staging, theme-aware vector graphics, and <strong>AES-256 encrypted batch uploads</strong>, it ensures zero transaction loss with minimal battery overhead.
+                        The native companion app securely bridges your device SMS to the Mpesa Analyzer cloud. Equipped with <strong>CameraX vertical QR pairing</strong>, on-device SQLite staging, <strong>"Ask My M-Pesa" AI Financial Assistant</strong>, and <strong>AES-256 encrypted batch uploads</strong>, it ensures zero transaction loss with minimal battery overhead.
                     </p>
                     <div class="d-flex flex-wrap gap-3">
                         <a href="<?= base_url('setup') ?>" class="btn btn-primary btn-lg px-4">
@@ -121,12 +121,13 @@ $systemVersion = $versionData['version'] ?? '3.2.0';
                     <div class="glass-card text-center p-5 shadow-sm">
                         <div class="d-flex justify-content-center gap-2 mb-3 flex-wrap">
                             <span class="badge bg-primary bg-opacity-10 text-primary border px-2.5 py-1.5"><i class="fa-solid fa-camera me-1"></i> CameraX QR</span>
+                            <span class="badge bg-warning bg-opacity-10 text-warning border px-2.5 py-1.5"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> In-App AI Chat</span>
+                            <span class="badge bg-info bg-opacity-10 text-info border px-2.5 py-1.5"><i class="fa-solid fa-fingerprint me-1"></i> Biometric Auth</span>
                             <span class="badge bg-success bg-opacity-10 text-success border px-2.5 py-1.5"><i class="fa-solid fa-lock me-1"></i> AES-256 CBC</span>
-                            <span class="badge bg-dark bg-opacity-10 text-dark border px-2.5 py-1.5"><i class="fa-solid fa-database me-1"></i> SQLite Queue</span>
                         </div>
                         <i class="fa-solid fa-mobile-screen-button fa-6x text-primary opacity-50 mb-3"></i>
-                        <h5 class="fw-bold mb-1">Zero-Loss SMS Synchronization</h5>
-                        <p class="text-muted small mb-0">Engineered for Android 8.0 through Android 14+ (API 26–34)</p>
+                        <h5 class="fw-bold mb-1">Zero-Loss Financial Assistant & Sync</h5>
+                        <p class="text-muted small mb-0">Engineered for Android 8.0 through Android 15+ (API 26–36)</p>
                     </div>
                 </div>
             </div>

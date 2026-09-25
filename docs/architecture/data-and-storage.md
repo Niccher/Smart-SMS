@@ -141,3 +141,45 @@ The database views `tbl_Sms_Classification` and `tbl_Analyzed_Transactions` are 
   - Execution duration in seconds and error logs
 - **`tbl_ML_Controls`**: Contains persistent system toggles, notably `auto_jobs_enabled`, which allows operators to pause background processing.
 - **`tbl_LLM_Prompts`**: Stores versioned prompt templates. Edits made in the admin UI create new versions rather than overwriting historical prompts.
+
+---
+
+## 5. Persistent Chat Dialogues (`tbl_Chat_Messages`)
+
+Multi-turn conversations between authenticated users and the AI Financial Assistant are stored in `tbl_Chat_Messages` (migration `2026-09-25-000031_CreateTblChatMessages.php`).
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                      tbl_Chat_Messages                                 │
+├────────────────────────────────────────────────────────────────────────┤
+│ • Identity & Turn:      id (PK), user_id (indexed), role (user|assistant)│
+│ • Content:              message (TEXT)                                 │
+│ • Client Provenance:    platform ('webapp' | 'mobile', indexed),        │
+│                         device_info (UA or phone model),               │
+│                         app_version (e.g. '3.5.0')                     │
+│ • AI Observability:     model, provider, tokens_used, latency_ms       │
+│ • Timestamp:            created_at (indexed with user_id)               │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Capabilities:
+1. **Platform Segregation**: The `platform` column discriminates between questions typed into the WebApp browser and those submitted via the Android companion app, allowing unified storage with per-device telemetry.
+2. **Context Windowing**: On chat initialization, the WebApp and Mobile endpoints fetch the user's latest 50 dialogue turns to populate the multi-turn prompt history.
+3. **Auditability**: Latency (`latency_ms`) and token consumption (`tokens_used`) are recorded for each AI response, supporting system performance audits.
+
+---
+
+## 6. Redis 7 In-Memory Caching & Session Storage
+
+The `mpesa-redis` container provides high-throughput, low-latency caching and temporary storage:
+
+| Attribute | Specification | Purpose |
+|---|---|---|
+| **Engine** | Redis 7 Alpine (`redis:7-alpine`) | Ephemeral storage & cache acceleration |
+| **Published Port** | `6379` | Host and inter-container connectivity |
+| **Memory Limit** | `128 MB` (`--maxmemory 128mb`) | Strict RAM cap preventing container OOM |
+| **Eviction Policy** | `volatile-lru` (`--maxmemory-policy volatile-lru`) | Automatically evicts oldest expired keys |
+| **Session Key Pattern** | `ci_session:*` | Distributed WebApp user sessions |
+| **Prompt Cache Pattern** | `mpesa:chat:cache:*` | Caches repetitive financial aggregate queries |
+| **Live Telemetry** | Polled via Redis `INFO` / Socket | Powers the 4th KPI card on `admin/telemetry` |
+

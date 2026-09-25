@@ -284,7 +284,7 @@ log "Old containers stopped and explicit name conflicts cleared"
 # ── 6. Build & Start Containers ───────────────────────────────
 section "6. Building & Starting All Containers"
 docker compose up --build -d 2>&1 | tail -20
-log "Containers created and started (mysql, web, ml)"
+log "Containers created and started (mysql, web, ml, redis)"
 
 echo ""
 echo -e "   ${BOLD}Docker Image Sizes:${RESET}"
@@ -327,6 +327,39 @@ for i in $(seq 1 15); do
     sleep 2
 done
 $REDIS_HEALTHY || { echo ""; warn "Redis did not report healthy within timeout. Check: docker compose logs redis"; }
+
+# ── 7c. Verify Cron Daemon in Web Container ───────────────────
+section "7c. Verifying Cron Daemon in Web Container"
+printf "   Checking cron service in web container"
+CRON_RUNNING=false
+for i in $(seq 1 10); do
+    if docker compose exec -T web pgrep cron >/dev/null 2>&1; then
+        echo ""
+        log "Cron daemon is actively running inside the web container"
+        CRON_RUNNING=true
+        break
+    fi
+    printf "."
+    sleep 2
+done
+if ! $CRON_RUNNING; then
+    echo ""
+    warn "Cron daemon is not running inside web container. Starting service..."
+    docker compose exec -T web service cron start 2>&1 || true
+    if docker compose exec -T web pgrep cron >/dev/null 2>&1; then
+        log "Cron service started successfully"
+        CRON_RUNNING=true
+    else
+        warn "Could not start cron daemon inside web container. Check: docker compose logs web"
+    fi
+fi
+
+# Ensure cron log and environment files have proper permissions
+docker compose exec -T web sh -c "
+    touch /var/log/mpesa-cron.log /var/www/html/writable/cron_env.sh 2>/dev/null || true
+    chmod 666 /var/log/mpesa-cron.log 2>/dev/null || true
+    chmod 755 /var/www/html/writable/cron_env.sh 2>/dev/null || true
+" 2>&1 && log "Cron log and environment files verified (/var/log/mpesa-cron.log)" || true
 
 # ── 8. Run Database Migrations & Seeding ──────────────────────
 section "8. Running Database Migrations & Seeding"
@@ -383,7 +416,9 @@ section "11. Setting Container Writable Directory Permissions"
 docker compose exec -T web sh -c "
     mkdir -p writable/cache writable/logs writable/session writable/uploads/payloads writable/debugbar writable/backups && \
     chown -R www-data:www-data writable && \
-    chmod -R 775 writable
+    chmod -R 775 writable && \
+    touch /var/log/mpesa-cron.log && \
+    chmod 666 /var/log/mpesa-cron.log
 " 2>&1 && log "Writable permissions enforced (www-data:775)" || warn "Failed to update writable permissions"
 
 # ── 12. Housekeeping, Storage Metrics & Cache Clearing ────────
@@ -412,11 +447,16 @@ FINAL_WEB=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${WEB_PORT}/
 if [ "$FINAL_WEB" = "200" ] || [ "$FINAL_WEB" = "307" ] || [ "$FINAL_WEB" = "302" ]; then
     log "PLATFORM IS LIVE — ALL SYSTEMS OPERATIONAL (WebApp HTTP ${FINAL_WEB})"
     echo ""
-    echo -e "  ${BOLD}WebApp Dashboard :${RESET}  ${BASE_URL}"
-    echo -e "  ${BOLD}Admin ML Config  :${RESET}  ${BASE_URL}admin/ml"
-    echo -e "  ${BOLD}ML API Swagger   :${RESET}  http://${DETECTED_IP}:${ML_PORT}/docs"
-    echo -e "  ${BOLD}ML Health Probe  :${RESET}  http://${DETECTED_IP}:${ML_PORT}/health"
-    echo -e "  ${BOLD}WebApp Health    :${RESET}  ${BASE_URL}health"
+    echo -e "  ${BOLD}WebApp Dashboard     :${RESET}  ${BASE_URL}"
+    echo -e "  ${BOLD}AI Financial Chat    :${RESET}  ${BASE_URL}dashboard/chat"
+    echo -e "  ${BOLD}Admin Telemetry      :${RESET}  ${BASE_URL}admin/telemetry"
+    echo -e "  ${BOLD}Admin Crons Schedule :${RESET}  ${BASE_URL}admin/crons"
+    echo -e "  ${BOLD}Admin ML Config      :${RESET}  ${BASE_URL}admin/ml"
+    echo -e "  ${BOLD}Mobile AI Gateway    :${RESET}  ${BASE_URL}api/v1/chat"
+    echo -e "  ${BOLD}ML API Swagger       :${RESET}  http://${DETECTED_IP}:${ML_PORT}/docs"
+    echo -e "  ${BOLD}ML Health Probe      :${RESET}  http://${DETECTED_IP}:${ML_PORT}/health"
+    echo -e "  ${BOLD}WebApp Health        :${RESET}  ${BASE_URL}health"
+    echo -e "  ${BOLD}Redis Cache Server   :${RESET}  redis://${DETECTED_IP}:6379"
     echo ""
     finish_deployment
 

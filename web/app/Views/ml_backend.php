@@ -3,7 +3,7 @@ $versionData = [];
 if (file_exists(APPPATH . 'Config/version.json')) {
     $versionData = json_decode(file_get_contents(APPPATH . 'Config/version.json'), true);
 }
-$systemVersion = $versionData['version'] ?? '3.2.0';
+$systemVersion = $versionData['version'] ?? '3.5.0';
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
@@ -105,12 +105,12 @@ $systemVersion = $versionData['version'] ?? '3.2.0';
                     </span>
                     <h1 class="fw-800 mb-3" style="font-size: 2.75rem; font-weight: 800; letter-spacing: -0.5px;">ML Backend Engine</h1>
                     <p class="lead text-muted mb-4" style="line-height: 1.7;">
-                        High-performance FastAPI service running local GGUF Large Language Models (such as <strong>Qwen 2.5 3B Instruct</strong>) via <code>llama.cpp</code>. Employs <strong>AVX2 vectorization</strong>, dynamic prompt versioning, live container telemetry, and two-stage heuristic + semantic parsing without external API fees.
+                        High-performance FastAPI service running local GGUF Large Language Models (<strong>Qwen 2.5 3B Instruct</strong> via <code>llama.cpp</code>) alongside agile cloud LLMs (<strong>DeepSeek, Google Gemini</strong>). Powers the conversational AI financial advisor (<code>/api/v1/chat</code>) with live financial history aggregation.
                     </p>
                     <div class="d-flex gap-2 flex-wrap mb-4">
                         <span class="badge bg-light text-dark border px-3 py-2"><i class="fa-brands fa-python me-1"></i>FastAPI 0.110+</span>
-                        <span class="badge bg-light text-dark border px-3 py-2"><i class="fa-solid fa-brain me-1"></i>Llama.cpp Engine</span>
-                        <span class="badge bg-light text-dark border px-3 py-2"><i class="fa-solid fa-bolt me-1"></i>AVX2 / OpenMP</span>
+                        <span class="badge bg-light text-dark border px-3 py-2"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Conversational AI</span>
+                        <span class="badge bg-light text-dark border px-3 py-2"><i class="fa-solid fa-brain me-1"></i>Llama.cpp / DeepSeek</span>
                         <span class="badge bg-light text-dark border px-3 py-2"><i class="fa-solid fa-gauge-high me-1"></i>Live Telemetry</span>
                     </div>
                     <div class="d-flex flex-wrap gap-3">
@@ -126,12 +126,13 @@ $systemVersion = $versionData['version'] ?? '3.2.0';
                     <div class="glass-card text-center p-5 shadow-sm">
                         <div class="d-flex justify-content-center gap-2 mb-3 flex-wrap">
                             <span class="badge bg-primary bg-opacity-10 text-primary border px-2.5 py-1.5"><i class="fa-solid fa-server me-1"></i> Port 9050</span>
+                            <span class="badge bg-warning bg-opacity-10 text-warning border px-2.5 py-1.5"><i class="fa-solid fa-comments me-1"></i> /api/v1/chat</span>
                             <span class="badge bg-success bg-opacity-10 text-success border px-2.5 py-1.5"><i class="fa-solid fa-memory me-1"></i> GGUF Quantized</span>
                             <span class="badge bg-info bg-opacity-10 text-info border px-2.5 py-1.5"><i class="fa-solid fa-shield me-1"></i> 100% On-Premise</span>
                         </div>
                         <i class="fa-solid fa-microchip fa-6x text-primary opacity-50 mb-3"></i>
-                        <h5 class="fw-bold mb-1">Local Inference Microservice</h5>
-                        <p class="text-muted small mb-0">FastAPI Worker + llama-server Daemon Process</p>
+                        <h5 class="fw-bold mb-1">Local Inference & Financial Chat</h5>
+                        <p class="text-muted small mb-0">FastAPI Worker + llama-server Daemon + Dynamic LLM Router</p>
                     </div>
                 </div>
             </div>
