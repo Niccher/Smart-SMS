@@ -40,6 +40,8 @@ class Filters extends BaseConfig
                 'health',
                 'ml-backend',
                 'admin/*',
+                'dashboard/chat/send',
+                'dashboard/chat/*',
                 'dashboard/rescan',
                 'dashboard/rescan/*',
                 'dashboard/blocklist/*',

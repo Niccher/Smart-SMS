@@ -63,6 +63,11 @@ class ChatController extends BaseController
      */
     public function send()
     {
+        if (!auth()->loggedIn() || !auth()->user()) {
+            return $this->response->setStatusCode(401)->setJSON([
+                'error' => 'Your session has expired. Please refresh the page and sign in again.',
+            ]);
+        }
         $userId = auth()->user()->id;
 
         $json = $this->request->getJSON(true);

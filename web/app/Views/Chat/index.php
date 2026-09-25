@@ -267,23 +267,39 @@ document.addEventListener('DOMContentLoaded', function () {
         scrollToBottom();
 
         try {
-            const csrfName = csrfInput.name;
-            const csrfVal = csrfInput.value;
+            const csrfName = csrfInput ? csrfInput.name : 'mpesa_analyzer_csrf_token';
+            const csrfVal = csrfInput ? csrfInput.value : '';
 
             const payload = {
                 message: userText,
                 history: conversationHistory.slice(-8)
             };
+            if (csrfName && csrfVal) {
+                payload[csrfName] = csrfVal;
+            }
+
+            const reqHeaders = {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+            if (csrfVal) {
+                reqHeaders['X-CSRF-TOKEN'] = csrfVal;
+                if (csrfName) {
+                    reqHeaders[csrfName] = csrfVal;
+                }
+            }
 
             const response = await fetch('<?= base_url('dashboard/chat/send') ?>', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    [csrfName]: csrfVal
-                },
+                headers: reqHeaders,
                 body: JSON.stringify(payload)
             });
+
+            // If new CSRF token is provided in response headers, update it
+            const newCsrf = response.headers.get('X-CSRF-TOKEN') || response.headers.get(csrfName);
+            if (newCsrf && csrfInput) {
+                csrfInput.value = newCsrf;
+            }
 
             const data = await response.json();
 
