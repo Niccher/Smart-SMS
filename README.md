@@ -1,6 +1,13 @@
-# M-Pesa Analyzer Platform
+# Smart Finance Platform
 
-Full-stack financial analytics platform and mobile API gateway for M-Pesa transactions. Combines a CodeIgniter 4 web application, an autonomous Python FastAPI LLM intelligence microservice, a high-performance Redis 7 session & cache engine, and a shared MySQL 8.4 database to ingest, decrypt, classify, analyze, and chat with mobile money transactions.
+[![Release](https://img.shields.io/badge/Release-v3.5.0-blue.svg)](https://github.com/Niccher/Smart-Finance-Platform/releases)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![PHP](https://img.shields.io/badge/PHP-8.3-777BB4.svg)](https://www.php.net/)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB.svg)](https://www.python.org/)
+[![Redis](https://img.shields.io/badge/Redis-7.0-DC382D.svg)](https://redis.io/)
+[![Companion App](https://img.shields.io/badge/Companion_App-Smart--Finance--Android-green.svg)](https://github.com/Niccher/Smart-Finance-Android)
+
+Full-stack financial intelligence platform and mobile API gateway for M-Pesa, Commercial Banking, and Digital Credit SMS transactions. Combines a CodeIgniter 4 web application, an autonomous Python FastAPI LLM intelligence microservice (Qwen 2.5, DeepSeek, Gemini), a high-performance Redis 7 session & cache engine, and a shared MySQL 8.4 database to ingest, decrypt, classify, analyze, and chat with personal finances.
 
 Stack: PHP 8.3 (CodeIgniter 4), Python 3.12 (FastAPI, llama.cpp, Qwen2.5), Redis 7, MySQL 8.4, Docker Compose
 
@@ -21,6 +28,7 @@ Software engineers: [docs/README.md](docs/README.md).
 | **ML Swagger UI** | http://localhost:8001/docs | Interactive OpenAPI documentation |
 | **Redis Cache** | localhost:6379 | In-memory session & cache store |
 | **MySQL Server** | localhost:3306 | Direct database access port |
+| **Android Companion Client** | [Smart-Finance-Android](https://github.com/Niccher/Smart-Finance-Android) | Edge SMS capture, encryption & In-App AI Chat |
 
 ---
 

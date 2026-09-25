@@ -67,7 +67,7 @@ class Home extends BaseController
         if (!file_exists($jsonPath)) {
             return $this->response->setJSON([
                 'version' => '3.5.0',
-                'github_url' => 'https://github.com/Niccher/Smart-SMS',
+                'github_url' => 'https://github.com/Niccher/Smart-Finance-Platform',
                 'changelog' => [],
                 'releases'  => []
             ]);

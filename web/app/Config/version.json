@@ -1,8 +1,8 @@
 {
   "version": "3.5.0",
   "release_date": "2026-09-25",
-  "github_url": "https://github.com/Niccher/Smart-SMS",
-  "android_github_url": "https://github.com/Niccher/MPesa-Analyzer-App",
+  "github_url": "https://github.com/Niccher/Smart-Finance-Platform",
+  "android_github_url": "https://github.com/Niccher/Smart-Finance-Android",
   "changelog": [
     "⚡ Integrated Redis 7 for high-speed in-memory session persistence and LLM prompt response caching.",
     "🤖 Conversational AI Financial Assistant added across WebApp dashboard and Android native app with English & Sheng support.",

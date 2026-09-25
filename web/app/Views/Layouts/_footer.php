@@ -5,8 +5,8 @@ if (file_exists(APPPATH . 'Config/version.json')) {
 }
 $systemVersion = $versionData['version'] ?? '3.5.0';
 $systemReleaseDate = $versionData['release_date'] ?? date('Y-m-d');
-$systemGithub = $versionData['github_url'] ?? 'https://github.com/Niccher/Smart-SMS';
-$systemAndroidGithub = $versionData['android_github_url'] ?? 'https://github.com/Niccher/MPesa-Analyzer-App';
+$systemGithub = $versionData['github_url'] ?? 'https://github.com/Niccher/Smart-Finance-Platform';
+$systemAndroidGithub = $versionData['android_github_url'] ?? 'https://github.com/Niccher/Smart-Finance-Android';
 $systemReleases = $versionData['releases'] ?? [];
 $systemChangelog = $versionData['changelog'] ?? [];
 ?>
