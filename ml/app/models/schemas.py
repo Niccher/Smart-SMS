@@ -161,5 +161,13 @@ class ChatResponse(BaseModel):
     reply: str
     latency_ms: int
     tokens_used: int = 0
+    model: Optional[str] = None
+    provider: Optional[str] = None
+
+
+class ChatInfoResponse(BaseModel):
+    model: str
+    provider: str
+    status: str
 
 

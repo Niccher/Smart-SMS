@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         cron \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) intl mysqli pdo_mysql zip gd \
+    && pecl install redis && docker-php-ext-enable redis \
     && rm -rf /var/lib/apt/lists/*
 
 # Enable Apache modules — swap to prefork (mod_php requires it; event is the default)

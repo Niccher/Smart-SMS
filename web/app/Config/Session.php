@@ -99,4 +99,17 @@ class Session extends BaseConfig
      * DB Group for the database session.
      */
     public ?string $DBGroup = null;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $redisHost = env('REDIS_HOST') ?: getenv('REDIS_HOST');
+        $redisPort = env('REDIS_PORT') ?: getenv('REDIS_PORT') ?: '6379';
+
+        if ($redisHost && extension_loaded('redis')) {
+            $this->driver   = \CodeIgniter\Session\Handlers\RedisHandler::class;
+            $this->savePath = "tcp://{$redisHost}:{$redisPort}";
+        }
+    }
 }

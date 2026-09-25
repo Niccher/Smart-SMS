@@ -51,11 +51,15 @@ services:
       - database.default.port=3306
       - database.default.DBDriver=MySQLi
       - ML_BACKEND_URL=http://ml-mpesa-analyzer:9050
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     env_file:
       - path: .env
         required: false
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
@@ -89,11 +93,14 @@ services:
       - LLM_MODEL=${LLM_MODEL:-qwen2.5-1.5b-instruct}
       - LLM_PROVIDER=${LLM_PROVIDER:-openai-compatible}
       - MODEL_PATH=${MODEL_PATH:-/models/qwen2.5-1.5b-instruct-q4_k_m.gguf}
+      - REDIS_URL=redis://redis:6379/1
     env_file:
       - path: .env
         required: false
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9050/health"]
@@ -107,9 +114,29 @@ services:
           - ml-mpesa-analyzer
           - ml
 
+  redis:
+    image: redis:7-alpine
+    container_name: mpesa-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      mpesa-network:
+        aliases:
+          - redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   mysql-data:
   web-writable:
+  redis-data:
 
 networks:
   mpesa-network:

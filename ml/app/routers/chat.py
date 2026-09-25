@@ -5,13 +5,30 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
+from app.config import settings
 from app.db.queries import fetch_user_financial_aggregation, log_llm_call
-from app.models.schemas import ChatRequest, ChatResponse
+from app.models.schemas import ChatInfoResponse, ChatRequest, ChatResponse
+from app.services.llm_cache import llm_cache
 from app.services.llm_service import llm
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["AI Assistant"])
+
+
+@router.get("/chat/info", response_model=ChatInfoResponse)
+async def get_chat_info() -> ChatInfoResponse:
+    """Return active LLM model and provider information."""
+    try:
+        await settings.reload_from_db()
+    except Exception as e:
+        logger.debug(f"Could not reload settings from DB: {e}")
+    info = llm.get_model_info()
+    return ChatInfoResponse(
+        model=info["model"],
+        provider=info["provider"],
+        status="online",
+    )
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -28,6 +45,26 @@ async def chat_with_assistant(request: ChatRequest) -> ChatResponse:
     user_query = request.message.strip()
     if not user_query:
         raise HTTPException(status_code=400, detail="message cannot be empty")
+
+    # Hot reload latest database configurations
+    try:
+        await settings.reload_from_db()
+    except Exception as e:
+        logger.debug(f"Could not reload settings from DB: {e}")
+
+    # Check cache for standalone queries (empty conversation history)
+    if not request.history:
+        cache_key = f"{user_id}:{user_query.lower()}"
+        cached = await llm_cache.get("chat", cache_key)
+        if cached:
+            logger.info(f"Serving cached chat response for user {user_id}")
+            return ChatResponse(
+                reply=cached["reply"],
+                latency_ms=cached.get("latency_ms", 15),
+                tokens_used=cached.get("tokens_used", 0),
+                model=cached.get("model"),
+                provider=cached.get("provider"),
+            )
 
     # Fetch financial snapshot from DB
     try:
@@ -97,8 +134,25 @@ async def chat_with_assistant(request: ChatRequest) -> ChatResponse:
     except Exception as e:
         logger.warning(f"Could not log chat LLM call: {e}")
 
+    if not request.history:
+        cache_key = f"{user_id}:{user_query.lower()}"
+        await llm_cache.set(
+            "chat",
+            cache_key,
+            {
+                "reply": call_res.content,
+                "latency_ms": call_res.latency_ms,
+                "tokens_used": tokens_used,
+                "model": call_res.model,
+                "provider": call_res.provider,
+            },
+            ttl_seconds=900,
+        )
+
     return ChatResponse(
         reply=call_res.content,
         latency_ms=call_res.latency_ms,
         tokens_used=tokens_used,
+        model=call_res.model,
+        provider=call_res.provider,
     )

@@ -74,11 +74,19 @@ class Settings:
         self.max_retries = 3
         self.poll_interval = 30
 
+        # Redis cache configuration
+        self.redis_host = "redis"
+        self.redis_port = 6379
+        self.redis_password = ""
+
         # Load initial values from environment
         self._load_from_env()
 
     def _load_from_env(self):
         """Initialise values from environment variables."""
+        self.redis_host = os.getenv("REDIS_HOST", self.redis_host)
+        self.redis_port = int(os.getenv("REDIS_PORT", str(self.redis_port)))
+        self.redis_password = os.getenv("REDIS_PASSWORD", self.redis_password)
         self.llm_engine = os.getenv("LLM_ENGINE", self.llm_engine)
         self.llm_provider = os.getenv("LLM_PROVIDER", self.llm_provider)
         self.llm_api_key = os.getenv("LLM_API_KEY", self.llm_api_key)

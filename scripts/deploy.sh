@@ -256,6 +256,8 @@ fi
 set_env "WEB_PORT" "$WEB_PORT"
 set_env "ML_MPESA_ANALYZER_API_PORT" "$ML_PORT"
 set_env "MYSQL_HOST_PORT" "3306"
+set_env "REDIS_HOST" "redis"
+set_env "REDIS_PORT" "6379"
 set_env "app.baseURL" "$BASE_URL"
 set_env "CI_ENVIRONMENT" "production"
 set_env "DB_HOST" "mysql"
@@ -308,6 +310,23 @@ for i in $(seq 1 40); do
     sleep 3
 done
 $MYSQL_HEALTHY || { echo ""; warn "MySQL did not report healthy within timeout. Check: docker compose logs mysql"; }
+
+# ── 7b. Wait for Redis Health (:6379) ─────────────────────────
+section "7b. Waiting for Redis Health (:6379)"
+printf "   Checking mpesa-redis status"
+REDIS_HEALTHY=false
+for i in $(seq 1 15); do
+    R_STATUS=$(docker inspect --format='{{.State.Health.Status}}' mpesa-redis 2>/dev/null || echo "missing")
+    if [ "$R_STATUS" = "healthy" ]; then
+        echo ""
+        log "Redis in-memory cache and session store is healthy"
+        REDIS_HEALTHY=true
+        break
+    fi
+    printf "."
+    sleep 2
+done
+$REDIS_HEALTHY || { echo ""; warn "Redis did not report healthy within timeout. Check: docker compose logs redis"; }
 
 # ── 8. Run Database Migrations & Seeding ──────────────────────
 section "8. Running Database Migrations & Seeding"

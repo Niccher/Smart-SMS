@@ -303,6 +303,16 @@ class LLMService:
         """Execute chat completion across local or external LLM providers."""
         return await self._call_llm(messages, response_format=None)
 
+    def get_model_info(self) -> dict[str, str]:
+        """Return the active LLM provider and model name based on current settings."""
+        if settings.llm_engine == "external":
+            provider = settings.llm_external_provider or "external"
+            model = settings.llm_external_model or "unknown"
+        else:
+            provider = settings.llm_provider or "local"
+            model = settings.llm_model or "qwen2.5-1.5b-instruct"
+        return {"provider": provider, "model": model, "engine": settings.llm_engine}
+
     async def close(self):
         if self._client and not self._client.is_closed:
             await self._client.aclose()

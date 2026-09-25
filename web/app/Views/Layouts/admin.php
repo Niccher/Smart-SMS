@@ -90,8 +90,11 @@ $systemGithub = $versionData['github_url'] ?? 'https://github.com/niccher/Mpesa_
         </div>
 
         <div class="ace-nav-actions">
-            <!-- Rescan Buttons -->
+            <!-- Rescan & AI Buttons -->
             <div class="d-none d-md-flex gap-2">
+                <a href="<?= base_url('dashboard/chat') ?>" class="ace-nav-btn bg-success text-white text-decoration-none" title="Ask AI Financial Assistant">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span class="d-none d-lg-inline">Ask AI</span>
+                </a>
                 <button class="ace-nav-btn bg-primary" id="rescanBtn" title="Process only new/unprocessed SMS">
                     <i class="fa-solid fa-rotate"></i> Rescan
                 </button>
@@ -168,6 +171,14 @@ $systemGithub = $versionData['github_url'] ?? 'https://github.com/niccher/Mpesa_
                     <a href="<?= url_to('Graph::index') ?>" class="ace-nav-link">
                         <i class="fa-solid fa-chart-pie"></i>
                         <span class="ace-nav-text">Analytics</span>
+                    </a>
+                </li>
+
+                <li class="ace-nav-item <?= strpos($currentURL, 'dashboard/chat') !== false ? 'active' : '' ?>">
+                    <a href="<?= base_url('dashboard/chat') ?>" class="ace-nav-link">
+                        <i class="fa-solid fa-wand-magic-sparkles text-primary"></i>
+                        <span class="ace-nav-text">AI Financial Assistant</span>
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle ms-auto" style="font-size: 0.65rem;">AI</span>
                     </a>
                 </li>
 
