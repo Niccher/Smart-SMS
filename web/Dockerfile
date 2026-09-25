@@ -27,11 +27,13 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
         /etc/apache2/apache2.conf \
         /etc/apache2/conf-available/*.conf
 
-# Install cron job: run CodeIgniter scheduler every minute
-RUN printf 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n* * * * * root cd /var/www/html && php spark cron:run >> /var/log/mpesa-cron.log 2>&1\n' \
+# Install cron job: run CodeIgniter scheduler every minute with environment loading
+RUN sed -i '/pam_loginuid.so/c session optional pam_loginuid.so' /etc/pam.d/cron \
+    && printf 'SHELL=/bin/bash\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n* * * * * root [ -f /var/www/html/writable/cron_env.sh ] && . /var/www/html/writable/cron_env.sh; cd /var/www/html && /usr/local/bin/php spark cron:run >> /var/log/mpesa-cron.log 2>&1\n' \
         > /etc/cron.d/mpesa-analyzer \
     && chmod 644 /etc/cron.d/mpesa-analyzer \
-    && touch /var/log/mpesa-cron.log
+    && touch /var/log/mpesa-cron.log \
+    && chown root:root /etc/cron.d/mpesa-analyzer
 
 WORKDIR /var/www/html
 

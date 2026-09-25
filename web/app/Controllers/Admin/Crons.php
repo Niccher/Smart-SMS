@@ -15,6 +15,26 @@ class Crons extends BaseController
     {
         $jobs = $this->loadJobs();
 
+        $logPath = '/var/log/mpesa-cron.log';
+        $logExists = file_exists($logPath);
+        $logMtime = $logExists ? filemtime($logPath) : 0;
+        $cronRunning = false;
+        if (function_exists('shell_exec')) {
+            $output = @shell_exec('pgrep -x cron 2>&1');
+            $cronRunning = !empty(trim((string)$output));
+        }
+        if (!$cronRunning) {
+            $cronRunning = file_exists('/var/run/crond.pid') || file_exists('/run/crond.pid') || file_exists('/var/run/cron.pid') || file_exists('/run/cron.pid');
+        }
+        $lastActivity = $logMtime > 0 ? (time() - $logMtime) : null;
+        $lastActivityStr = $lastActivity !== null ? ($lastActivity < 60 ? "{$lastActivity}s ago" : round($lastActivity / 60) . 'm ago') : 'Never';
+
+        $daemonInfo = [
+            'running'      => $cronRunning,
+            'last_run_ago' => $lastActivityStr,
+            'log_exists'   => $logExists,
+        ];
+
         return view('Admin/Crons/index', [
             'bg_color' => '#B1B8ED',
             'cron_jobs' => $jobs,
@@ -23,6 +43,7 @@ class Crons extends BaseController
             'job_types' => CronRunner::types(),
             'job_sections' => $this->jobSections(),
             'job_type_counts' => $this->jobTypeCounts($jobs),
+            'daemon_info' => $daemonInfo,
             'presets' => [
                 ['value' => '* * * * *', 'label' => 'Every minute'],
                 ['value' => '*/5 * * * *', 'label' => 'Every 5 minutes'],
@@ -326,12 +347,71 @@ class Crons extends BaseController
         if ($ts === null || $ts === '') {
             return '';
         }
-
         try {
             $dt = new \DateTimeImmutable($ts, new \DateTimeZone('UTC'));
             return $dt->setTimezone(new \DateTimeZone('Africa/Nairobi'))->format('d M Y, g:i A');
         } catch (\Throwable $e) {
             return $ts;
         }
+    }
+
+    /**
+     * Return daemon status and log activity.
+     */
+    public function daemonStatus()
+    {
+        $logPath = '/var/log/mpesa-cron.log';
+        $logExists = file_exists($logPath);
+        $logSize = $logExists ? filesize($logPath) : 0;
+        $logMtime = $logExists ? filemtime($logPath) : 0;
+
+        $cronRunning = false;
+        if (function_exists('shell_exec')) {
+            $output = @shell_exec('pgrep -x cron 2>&1');
+            $cronRunning = !empty(trim((string)$output));
+        }
+        if (!$cronRunning) {
+            $cronRunning = file_exists('/var/run/crond.pid') || file_exists('/run/crond.pid') || file_exists('/var/run/cron.pid') || file_exists('/run/cron.pid');
+        }
+
+        $lastActivity = $logMtime > 0 ? (time() - $logMtime) : null;
+        $lastActivityStr = $lastActivity !== null ? ($lastActivity < 60 ? "{$lastActivity}s ago" : round($lastActivity / 60) . 'm ago') : 'Never';
+
+        return $this->response->setJSON([
+            'status'         => 'ok',
+            'daemon_running' => $cronRunning,
+            'log_exists'     => $logExists,
+            'log_size_bytes' => $logSize,
+            'last_run_ago'   => $lastActivityStr,
+            'log_mtime'      => $logMtime ? date('Y-m-d H:i:s', $logMtime) : null,
+        ]);
+    }
+
+    /**
+     * Return latest lines from /var/log/mpesa-cron.log.
+     */
+    public function daemonLog()
+    {
+        $logPath = '/var/log/mpesa-cron.log';
+        if (!file_exists($logPath)) {
+            return $this->response->setJSON([
+                'status'  => 'ok',
+                'content' => 'Cron log file /var/log/mpesa-cron.log does not exist yet.',
+            ]);
+        }
+
+        $content = '';
+        if (function_exists('shell_exec')) {
+            $content = (string) @shell_exec('tail -n 100 ' . escapeshellarg($logPath) . ' 2>&1');
+        }
+        if (empty($content)) {
+            $lines = @file($logPath);
+            $content = $lines ? implode('', array_slice($lines, -100)) : 'Empty log file.';
+        }
+
+        return $this->response->setJSON([
+            'status'  => 'ok',
+            'content' => $content ?: 'No log output yet.',
+        ]);
     }
 }

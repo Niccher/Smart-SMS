@@ -35,11 +35,16 @@ $routes->get('/health', 'Home::health');
 $routes->get('/api/v1/system/version', 'Home::systemVersion');
 $routes->post('/api/v1/chat', 'Api\V1\ChatController::apiChat');
 $routes->get('/api/v1/chat/info', 'Api\V1\ChatController::apiInfo');
+$routes->get('/api/v1/chat/history', 'Api\V1\ChatController::history');
+$routes->delete('/api/v1/chat/history', 'Api\V1\ChatController::clearHistory');
 $routes->post('api/v1/chat', 'Api\V1\ChatController::apiChat');
 $routes->get('api/v1/chat/info', 'Api\V1\ChatController::apiInfo');
+$routes->get('api/v1/chat/history', 'Api\V1\ChatController::history');
+$routes->delete('api/v1/chat/history', 'Api\V1\ChatController::clearHistory');
 $routes->get('/dashboard', 'DashboardController::index', ['filter' => 'session']);
 $routes->get('/dashboard/chat', 'ChatController::index', ['filter' => 'session']);
 $routes->post('/dashboard/chat/send', 'ChatController::send', ['filter' => 'session']);
+$routes->post('/dashboard/chat/clear', 'ChatController::clear', ['filter' => 'session']);
 $routes->get('/dashboard/chat/info', 'ChatController::info', ['filter' => 'session']);
 $routes->get('/dashboard/graph', 'Graph::index', ['filter' => 'session']);
 $routes->get('/dashboard/graph/category-details', 'Graph::categoryDetails', ['filter' => 'session']);
@@ -186,6 +191,8 @@ $routes->group('api/v1', ['namespace' => 'App\Controllers\Api\V1'], function ($r
     // AI Chat & Assistant (Mobile Gateway)
     $routes->post('chat', 'ChatController::apiChat');
     $routes->get('chat/info', 'ChatController::apiInfo');
+    $routes->get('chat/history', 'ChatController::history');
+    $routes->delete('chat/history', 'ChatController::clearHistory');
 });
 
 
@@ -236,6 +243,8 @@ $routes->group('admin', ['filter' => ['session', 'admin']], function ($routes) {
     $routes->post('crons/run', 'Admin\Crons::run');
     $routes->post('crons/output', 'Admin\Crons::output');
     $routes->post('crons/history', 'Admin\Crons::history');
+    $routes->get('crons/daemon-status', 'Admin\Crons::daemonStatus');
+    $routes->get('crons/daemon-log', 'Admin\Crons::daemonLog');
 
     // User management
     $routes->get('users', 'Admin\Users::index');

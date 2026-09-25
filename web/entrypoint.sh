@@ -83,9 +83,27 @@ php spark db:seed MLControlsSeeder || echo "Notice: MLControlsSeeder completed w
 
 echo "Seeders complete."
 
+# Export container environment variables for cron scheduler
+echo "Exporting environment variables for cron scheduler..."
+mkdir -p /var/www/html/writable
+printenv | grep -E '^(DB_|MYSQL|DATABASE_|CI_|REDIS_|ML_|SUPERADMIN_|APP_|MAIL_|EMAIL_)' | sed 's/^\(.*\)$/export \1/g' > /var/www/html/writable/cron_env.sh
+chmod 644 /var/www/html/writable/cron_env.sh
+printenv | grep -E '^(DB_|MYSQL|DATABASE_|CI_|REDIS_|ML_|SUPERADMIN_|APP_|MAIL_|EMAIL_)' > /etc/environment 2>/dev/null || true
+
+# Ensure cron daemon and log file are ready
+touch /var/log/mpesa-cron.log
+chmod 666 /var/log/mpesa-cron.log
+
+# Ensure /etc/cron.d/mpesa-analyzer exists and has correct permissions
+if [ ! -f "/etc/cron.d/mpesa-analyzer" ]; then
+    printf 'SHELL=/bin/bash\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n* * * * * root [ -f /var/www/html/writable/cron_env.sh ] && . /var/www/html/writable/cron_env.sh; cd /var/www/html && /usr/local/bin/php spark cron:run >> /var/log/mpesa-cron.log 2>&1\n' > /etc/cron.d/mpesa-analyzer
+    chmod 644 /etc/cron.d/mpesa-analyzer
+    chown root:root /etc/cron.d/mpesa-analyzer
+fi
+
 # Start the cron daemon so scheduled jobs run inside the container
 echo "Starting cron daemon..."
-cron
+cron -L 15
 
 echo "Fixing Apache MPM conflicts..."
 a2dismod mpm_event mpm_worker || true

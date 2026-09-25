@@ -35,6 +35,32 @@ class ChatController extends BaseApiController
             ]);
         }
 
+        $ua = (string) $this->request->getHeaderLine('User-Agent');
+        $appVersion = (string) ($this->request->getHeaderLine('X-App-Version') ?: '3.5.0');
+        $db = \Config\Database::connect();
+        $now = date('Y-m-d H:i:s');
+
+        // Persist mobile user message
+        try {
+            if ($db->tableExists('tbl_Chat_Messages')) {
+                $db->table('tbl_Chat_Messages')->insert([
+                    'user_id'     => $userId,
+                    'role'        => 'user',
+                    'message'     => $message,
+                    'platform'    => 'mobile',
+                    'device_info' => mb_substr($ua, 0, 255),
+                    'app_version' => $appVersion,
+                    'model'       => null,
+                    'provider'    => null,
+                    'tokens_used' => null,
+                    'latency_ms'  => null,
+                    'created_at'  => $now,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Api/V1/ChatController error saving user message: ' . $e->getMessage());
+        }
+
         $mlBase = rtrim((string) config('MlBackend')->baseUrl, '/');
         $fastApiUrl = $mlBase . '/api/v1/chat';
 
@@ -83,7 +109,85 @@ class ChatController extends BaseApiController
             ]);
         }
 
+        // Persist mobile assistant reply
+        try {
+            if ($db->tableExists('tbl_Chat_Messages')) {
+                $db->table('tbl_Chat_Messages')->insert([
+                    'user_id'     => $userId,
+                    'role'        => 'assistant',
+                    'message'     => $decoded['reply'] ?? '',
+                    'platform'    => 'mobile',
+                    'device_info' => mb_substr($ua, 0, 255),
+                    'app_version' => $appVersion,
+                    'model'       => $decoded['model'] ?? null,
+                    'provider'    => $decoded['provider'] ?? null,
+                    'tokens_used' => $decoded['tokens_used'] ?? null,
+                    'latency_ms'  => $decoded['latency_ms'] ?? null,
+                    'created_at'  => date('Y-m-d H:i:s'),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Api/V1/ChatController error saving assistant reply: ' . $e->getMessage());
+        }
+
         return $this->response->setJSON($decoded);
+    }
+
+    /**
+     * Mobile API endpoint: GET /api/v1/chat/history
+     */
+    public function history()
+    {
+        $userId = trim((string)($this->request->getGet('user_id') ?? $this->request->getHeaderLine('X-User-Id')));
+        if (empty($userId)) {
+            $user = $this->getUserFromToken();
+            $userId = $user ? (string)$user->id : '';
+        }
+        if (empty($userId)) {
+            return $this->response->setStatusCode(400)->setJSON(['error' => 'user_id is required']);
+        }
+
+        $db = \Config\Database::connect();
+        $messages = [];
+        try {
+            if ($db->tableExists('tbl_Chat_Messages')) {
+                $messages = $db->table('tbl_Chat_Messages')
+                    ->where('user_id', $userId)
+                    ->orderBy('id', 'ASC')
+                    ->limit(50)
+                    ->get()
+                    ->getResultArray();
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Api/V1/ChatController history error: ' . $e->getMessage());
+        }
+
+        return $this->response->setJSON(['status' => 'ok', 'history' => $messages]);
+    }
+
+    /**
+     * Mobile API endpoint: DELETE /api/v1/chat/history
+     */
+    public function clearHistory()
+    {
+        $userId = trim((string)($this->request->getGet('user_id') ?? $this->request->getHeaderLine('X-User-Id')));
+        if (empty($userId)) {
+            $user = $this->getUserFromToken();
+            $userId = $user ? (string)$user->id : '';
+        }
+        if (empty($userId)) {
+            return $this->response->setStatusCode(400)->setJSON(['error' => 'user_id is required']);
+        }
+
+        $db = \Config\Database::connect();
+        try {
+            if ($db->tableExists('tbl_Chat_Messages')) {
+                $db->table('tbl_Chat_Messages')->where('user_id', $userId)->delete();
+            }
+            return $this->response->setJSON(['status' => 'ok', 'message' => 'Chat history cleared.']);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON(['error' => $e->getMessage()]);
+        }
     }
 
     /**

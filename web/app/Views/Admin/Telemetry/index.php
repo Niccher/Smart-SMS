@@ -86,12 +86,13 @@
 $web = $metrics['web'] ?? [];
 $mysql = $metrics['mysql'] ?? [];
 $ml = $metrics['ml'] ?? [];
+$redis = $metrics['redis'] ?? [];
 ?>
 
 <!-- Quick Overview KPIs with Live Sparklines -->
 <div class="row g-3 mb-4">
     <!-- WebApp Container -->
-    <div class="col-md-4">
+    <div class="col-xl-3 col-md-6">
         <div class="card telemetry-card p-3 h-100">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-bold text-uppercase"><i class="fa-brands fa-php me-1 text-primary"></i> WebApp Container</span>
@@ -122,7 +123,7 @@ $ml = $metrics['ml'] ?? [];
     </div>
 
     <!-- MySQL Container -->
-    <div class="col-md-4">
+    <div class="col-xl-3 col-md-6">
         <div class="card telemetry-card p-3 h-100">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-bold text-uppercase"><i class="fa-solid fa-database me-1 text-info"></i> MySQL Container</span>
@@ -148,7 +149,7 @@ $ml = $metrics['ml'] ?? [];
     </div>
 
     <!-- ML Engine Container -->
-    <div class="col-md-4">
+    <div class="col-xl-3 col-md-6">
         <div class="card telemetry-card p-3 h-100">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-bold text-uppercase"><i class="fa-solid fa-microchip me-1 text-warning"></i> ML Engine Container</span>
@@ -171,6 +172,32 @@ $ml = $metrics['ml'] ?? [];
                     <span class="text-muted font-monospace" style="font-size: 0.7rem;" id="sparkMlLatencyVal"><?= esc($ml['latency_ms'] ?? 0) ?> ms</span>
                 </div>
                 <svg id="sparkMlLatency" class="telemetry-sparkline"></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Redis Cache Container -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card telemetry-card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-bold text-uppercase"><i class="fa-solid fa-server me-1 text-danger"></i> Redis In-Memory</span>
+                <span class="badge bg-<?= ($redis['status'] ?? '') === 'online' ? 'success' : 'danger' ?> metric-badge" id="kpiRedisStatus"><?= esc($redis['status'] ?? 'offline') ?></span>
+            </div>
+            <div class="d-flex align-items-baseline gap-2 mb-2">
+                <h3 class="fw-bold mb-0" id="kpiRedisMem"><?= esc($redis['memory']['used_human'] ?? '0M') ?></h3>
+                <span class="text-muted small">RAM (<span id="kpiRedisMemPct"><?= esc($redis['memory']['used_pct'] ?? 0) ?>%</span> of <span id="kpiRedisMaxMem"><?= esc($redis['memory']['max_mb'] ?? 128) ?>MB</span>)</span>
+            </div>
+            <div class="small text-muted d-flex justify-content-between mb-2">
+                <span>Keys: <strong id="kpiRedisKeys"><?= number_format($redis['keyspace']['total_keys'] ?? 0) ?></strong></span>
+                <span>Hit Rate: <strong id="kpiRedisHitRate" class="text-success"><?= esc($redis['keyspace']['hit_rate_pct'] ?? 100) ?>%</strong></span>
+            </div>
+            <!-- Live Redis Ping Latency Sparkline -->
+            <div class="pt-2 border-top">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted" style="font-size: 0.7rem;">Ping Latency Trend</span>
+                    <span class="text-muted font-monospace" style="font-size: 0.7rem;" id="sparkRedisOpsVal"><?= esc($redis['latency_ms'] ?? 0) ?> ms</span>
+                </div>
+                <svg id="sparkRedisOps" class="telemetry-sparkline"></svg>
             </div>
         </div>
     </div>
@@ -503,6 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyWebCpu = [];
     const historyMysqlQps = [];
     const historyMlLatency = [];
+    const historyRedisLatency = [];
 
     const intervalSelect = document.getElementById('pollIntervalSelect');
     const manualRefreshBtn = document.getElementById('manualRefreshBtn');
@@ -816,6 +844,35 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('mlQueueActive').textContent = ml.queue?.active_jobs || 0;
         document.getElementById('mlQueueQueued').textContent = ml.queue?.queued_jobs || 0;
         document.getElementById('mlQueueCompleted').textContent = ml.queue?.completed_today || 0;
+
+        // 4. Redis In-Memory Cache
+        if (data.redis) {
+            const r = data.redis;
+            const kpiRedisStatus = document.getElementById('kpiRedisStatus');
+            if (kpiRedisStatus) {
+                kpiRedisStatus.textContent = r.status || 'offline';
+                kpiRedisStatus.className = 'badge metric-badge ' + (r.status === 'online' ? 'bg-success' : 'bg-danger');
+            }
+            const kpiRedisMem = document.getElementById('kpiRedisMem');
+            if (kpiRedisMem) kpiRedisMem.textContent = r.memory?.used_human || '0M';
+            const kpiRedisMemPct = document.getElementById('kpiRedisMemPct');
+            if (kpiRedisMemPct) kpiRedisMemPct.textContent = (r.memory?.used_pct || 0) + '%';
+            const kpiRedisMaxMem = document.getElementById('kpiRedisMaxMem');
+            if (kpiRedisMaxMem) kpiRedisMaxMem.textContent = (r.memory?.max_mb || 128) + 'MB';
+
+            const kpiRedisKeys = document.getElementById('kpiRedisKeys');
+            if (kpiRedisKeys) kpiRedisKeys.textContent = (r.keyspace?.total_keys || 0).toLocaleString();
+            const kpiRedisHitRate = document.getElementById('kpiRedisHitRate');
+            if (kpiRedisHitRate) kpiRedisHitRate.textContent = (r.keyspace?.hit_rate_pct ?? 100) + '%';
+
+            const redisLatency = r.latency_ms || 0;
+            const sparkRedisOpsVal = document.getElementById('sparkRedisOpsVal');
+            if (sparkRedisOpsVal) sparkRedisOpsVal.textContent = redisLatency + ' ms';
+
+            historyRedisLatency.push(redisLatency);
+            if (historyRedisLatency.length > MAX_HISTORY) historyRedisLatency.shift();
+            drawSparkline('sparkRedisOps', historyRedisLatency, 0, null, '#dc3545', 'rgba(220, 53, 69, 0.12)');
+        }
     }
 
     // Interval Timer & Page Visibility handling

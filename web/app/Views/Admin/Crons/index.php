@@ -17,6 +17,14 @@
         <h2 class="fw-bold mb-1" style="color: var(--primary);"><i class="fa-solid fa-clock me-2"></i> Cron Jobs</h2>
         <p class="text-secondary mb-0">Create and manage the background tasks that keep the platform running.</p>
     </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge <?= ($daemon_info['running'] ?? false) ? 'bg-success' : 'bg-danger' ?> rounded-pill px-3 py-2 font-monospace" id="daemonStatusBadge">
+            <i class="fa-solid fa-circle-dot me-1"></i>Daemon: <?= ($daemon_info['running'] ?? false) ? 'Active' : 'Inactive' ?> (<?= esc($daemon_info['last_run_ago'] ?? 'Unknown') ?>)
+        </span>
+        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#daemonLogModal" id="viewDaemonLogBtn">
+            <i class="fa-solid fa-terminal me-1"></i> Daemon Log
+        </button>
+    </div>
 </div>
 <?= $this->endSection() ?>
 <?= $this->section('content') ?>
@@ -657,5 +665,40 @@ if (jobTypeFilter) {
         }
     });
 }
+
+// Daemon Log Modal Fetching
+const daemonLogModal = document.getElementById('daemonLogModal');
+if (daemonLogModal) {
+    daemonLogModal.addEventListener('show.bs.modal', async function() {
+        const logPre = document.getElementById('daemonLogContent');
+        if (logPre) logPre.textContent = 'Loading log output...';
+        try {
+            const resp = await fetch('<?= base_url('admin/crons/daemon-log') ?>');
+            const data = await resp.json();
+            if (logPre) logPre.textContent = data.content || 'No output.';
+        } catch (err) {
+            if (logPre) logPre.textContent = 'Failed to load daemon log: ' + err.message;
+        }
+    });
+}
 </script>
+
+<!-- Daemon Log Modal -->
+<div class="modal fade" id="daemonLogModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-terminal text-primary me-2"></i> In-Container Cron Daemon Log</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <p class="text-muted small mb-2">Live stream from <code>/var/log/mpesa-cron.log</code>. Shows execution stdout/stderr of scheduled jobs.</p>
+                <pre class="output-pre mb-0" id="daemonLogContent" style="max-height: 450px;">Loading...</pre>
+            </div>
+            <div class="modal-footer border-top py-2">
+                <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 <?= $this->endSection() ?>

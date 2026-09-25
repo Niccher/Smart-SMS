@@ -35,6 +35,7 @@ class Telemetry extends BaseController
             'web'       => $this->getWebAppMetrics(),
             'mysql'     => $this->getMySqlMetrics(),
             'ml'        => $this->getMlMetrics(),
+            'redis'     => $this->getRedisMetrics(),
         ];
     }
 
@@ -434,5 +435,95 @@ class Telemetry extends BaseController
         if ($days == 0 && count($parts) < 2) $parts[] = "{$secs}s";
 
         return implode(' ', $parts);
+    }
+
+    /**
+     * Gather Redis in-memory cache and session store metrics.
+     */
+    private function getRedisMetrics(): array
+    {
+        $host = getenv('REDIS_HOST') ?: 'redis';
+        $port = (int) (getenv('REDIS_PORT') ?: 6379);
+        $password = getenv('REDIS_PASSWORD') ?: null;
+
+        if (!extension_loaded('redis')) {
+            return [
+                'status'     => 'offline',
+                'error'      => 'PHP Redis extension is not loaded',
+                'latency_ms' => 0,
+            ];
+        }
+
+        $redis = new \Redis();
+        $start = microtime(true);
+        try {
+            $connected = @$redis->connect($host, $port, 0.5);
+            if (!$connected) {
+                return [
+                    'status'     => 'offline',
+                    'error'      => "Cannot connect to Redis at {$host}:{$port}",
+                    'latency_ms' => 0,
+                ];
+            }
+
+            if (!empty($password)) {
+                $redis->auth($password);
+            }
+
+            $pong = $redis->ping();
+            $latencyMs = round((microtime(true) - $start) * 1000, 2);
+
+            $info = $redis->info();
+            $dbSize = (int) $redis->dbSize();
+
+            $usedMem = (int) ($info['used_memory'] ?? 0);
+            $maxMem = (int) ($info['maxmemory'] ?? 0);
+            if ($maxMem <= 0) {
+                $maxMem = 128 * 1024 * 1024; // 128MB container limit
+            }
+            $memUsedMb = round($usedMem / 1048576, 2);
+            $memMaxMb = round($maxMem / 1048576, 1);
+            $memUsedPct = $maxMem > 0 ? round(($usedMem / $maxMem) * 100, 1) : 0;
+
+            $hits = (int) ($info['keyspace_hits'] ?? 0);
+            $misses = (int) ($info['keyspace_misses'] ?? 0);
+            $totalOps = $hits + $misses;
+            $hitRate = $totalOps > 0 ? round(($hits / $totalOps) * 100, 1) : 100.0;
+
+            $uptimeSec = (int) ($info['uptime_in_seconds'] ?? 0);
+
+            $redis->close();
+
+            return [
+                'status'            => 'online',
+                'latency_ms'        => $latencyMs,
+                'version'           => $info['redis_version'] ?? '7.x',
+                'uptime_sec'        => $uptimeSec,
+                'uptime_formatted'  => $this->formatUptime($uptimeSec),
+                'connected_clients' => (int) ($info['connected_clients'] ?? 0),
+                'memory' => [
+                    'used_bytes' => $usedMem,
+                    'used_mb'    => $memUsedMb,
+                    'used_human' => $info['used_memory_human'] ?? "{$memUsedMb}M",
+                    'max_mb'     => $memMaxMb,
+                    'used_pct'   => $memUsedPct,
+                    'frag_ratio' => (float) ($info['mem_fragmentation_ratio'] ?? 1.0),
+                ],
+                'keyspace' => [
+                    'total_keys'     => $dbSize,
+                    'hits'           => $hits,
+                    'misses'         => $misses,
+                    'hit_rate_pct'   => $hitRate,
+                    'ops_per_sec'    => (int) ($info['instantaneous_ops_per_sec'] ?? 0),
+                    'total_commands' => (int) ($info['total_commands_processed'] ?? 0),
+                ],
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'status'     => 'offline',
+                'error'      => $e->getMessage(),
+                'latency_ms' => 0,
+            ];
+        }
     }
 }

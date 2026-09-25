@@ -47,8 +47,9 @@
 
         <!-- Chat Stream Body -->
         <div class="card-body p-3 p-md-4" id="chatStream" style="height: 520px; overflow-y: auto; background-color: var(--bs-body-bg, #f8f9fa);">
+            <?php if (empty($chat_history)): ?>
             <!-- Welcome Assistant Bubble -->
-            <div class="d-flex mb-3 ai-message-row">
+            <div class="d-flex mb-3 ai-message-row" id="welcomeMsgRow">
                 <div class="flex-shrink-0 me-2">
                     <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-xs" style="width: 38px; height: 38px;">
                         <i class="fa-solid fa-robot"></i>
@@ -70,6 +71,53 @@
                     <div class="small text-muted mt-1 ms-1" style="font-size: 0.72rem;">Just now</div>
                 </div>
             </div>
+            <?php else: ?>
+                <?php foreach ($chat_history as $msg): ?>
+                    <?php if ($msg['role'] === 'user'): ?>
+                        <div class="d-flex justify-content-end mb-3">
+                            <div style="max-width: 80%;">
+                                <div class="p-3 shadow-xs chat-bubble-user">
+                                    <p class="mb-0 text-white"><?= nl2br(esc($msg['message'])) ?></p>
+                                </div>
+                                <div class="small text-muted text-end mt-1 me-1 d-flex align-items-center justify-content-end gap-1" style="font-size: 0.72rem;">
+                                    <?php if (($msg['platform'] ?? 'webapp') === 'mobile'): ?>
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle" title="Sent from Android Mobile"><i class="fa-solid fa-mobile-screen me-1"></i>Mobile</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" title="Sent from WebApp"><i class="fa-solid fa-laptop me-1"></i>Web</span>
+                                    <?php endif; ?>
+                                    <span><?= !empty($msg['created_at']) ? date('M j, H:i', strtotime($msg['created_at'])) : '' ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="d-flex mb-3 ai-message-row">
+                            <div class="flex-shrink-0 me-2">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-xs" style="width: 38px; height: 38px;">
+                                    <i class="fa-solid fa-robot"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1" style="max-width: 82%;">
+                                <div class="p-3 rounded-3 shadow-xs chat-bubble-ai">
+                                    <div class="fw-semibold text-primary mb-1 small d-flex align-items-center">
+                                        <span>M-Pesa Smart Advisor</span>
+                                        <?php if (!empty($msg['model'])): ?>
+                                            <span class="badge bg-secondary-subtle text-secondary font-monospace ms-2" style="font-size: 0.65rem;"><?= esc($msg['model']) ?></span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($msg['latency_ms'])): ?>
+                                            <span class="badge bg-light text-muted border font-monospace ms-2" style="font-size: 0.65rem;"><?= (int)$msg['latency_ms'] ?>ms</span>
+                                        <?php endif; ?>
+                                        <?php if (($msg['platform'] ?? 'webapp') === 'mobile'): ?>
+                                            <span class="badge bg-info-subtle text-info border border-info-subtle ms-2" title="Replied to Mobile app request" style="font-size: 0.65rem;"><i class="fa-solid fa-mobile-screen me-1"></i>Mobile</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="chat-text mb-0"><?= nl2br(esc($msg['message'])) ?></div>
+                                </div>
+                                <div class="small text-muted mt-1 ms-1" style="font-size: 0.72rem;"><?= !empty($msg['created_at']) ? date('M j, H:i', strtotime($msg['created_at'])) : '' ?></div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </div>
 
         <!-- Typing Indicator (Hidden by default) -->
@@ -140,7 +188,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const clearChatBtn = document.getElementById('clearChatBtn');
     const csrfInput = document.getElementById('chatCsrfToken');
 
-    let conversationHistory = [];
+    let conversationHistory = <?= json_encode(array_map(function($m) {
+        return [
+            'role' => $m['role'],
+            'content' => $m['message']
+        ];
+    }, $chat_history ?? [])) ?>;
 
     // Auto-expand textarea height
     chatInput.addEventListener('input', function () {
@@ -215,7 +268,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="p-3 shadow-xs chat-bubble-user">
                     <p class="mb-0 text-white">${formatMessageText(text)}</p>
                 </div>
-                <div class="small text-muted text-end mt-1 me-1" style="font-size: 0.72rem;">${timeStr}</div>
+                <div class="small text-muted text-end mt-1 me-1 d-flex align-items-center justify-content-end gap-1" style="font-size: 0.72rem;">
+                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" title="Sent from WebApp"><i class="fa-solid fa-laptop me-1"></i>Web</span>
+                    <span>${timeStr}</span>
+                </div>
             </div>
         `;
         chatStream.appendChild(row);
@@ -226,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function appendAiMessage(reply, modelName, latencyMs) {
         const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const latencyBadge = latencyMs ? `<span class="badge bg-light text-muted border font-monospace ms-2" style="font-size: 0.65rem;">${latencyMs}ms</span>` : '';
-        const modelBadge = modelName ? `<span class="badge bg-secondary-subtle text-secondary font-monospace" style="font-size: 0.65rem;">${modelName}</span>` : '';
+        const modelBadge = modelName ? `<span class="badge bg-secondary-subtle text-secondary font-monospace ms-2" style="font-size: 0.65rem;">${modelName}</span>` : '';
 
         const row = document.createElement('div');
         row.className = 'd-flex mb-3 ai-message-row';
@@ -240,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="p-3 rounded-3 shadow-xs chat-bubble-ai">
                     <div class="fw-semibold text-primary mb-1 small d-flex align-items-center">
                         <span>M-Pesa Smart Advisor</span>
-                        <span class="ms-2">${modelBadge}</span>
+                        ${modelBadge}
                         ${latencyBadge}
                     </div>
                     <div class="chat-text mb-0">${formatMessageText(reply)}</div>
@@ -342,8 +398,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Clear conversation
-    clearChatBtn.addEventListener('click', function () {
-        if (confirm('Clear this chat conversation?')) {
+    clearChatBtn.addEventListener('click', async function () {
+        if (!confirm('Clear your chat conversation history?')) return;
+        try {
+            clearChatBtn.disabled = true;
+            await fetch('<?= base_url('dashboard/chat/clear') ?>', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
             conversationHistory = [];
             chatStream.innerHTML = `
                 <div class="d-flex mb-3 ai-message-row">
@@ -359,15 +423,22 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <span class="badge bg-secondary-subtle text-secondary font-monospace" style="font-size: 0.65rem;">System</span>
                             </div>
                             <p class="mb-0 text-muted small">
-                                Conversation cleared. Feel free to ask a new question about your M-Pesa finances!
+                                Conversation history cleared. Feel free to ask a new question about your M-Pesa finances!
                             </p>
                         </div>
                         <div class="small text-muted mt-1 ms-1" style="font-size: 0.72rem;">Just now</div>
                     </div>
                 </div>
             `;
+        } catch (err) {
+            alert('Failed to clear conversation history: ' + err.message);
+        } finally {
+            clearChatBtn.disabled = false;
         }
     });
+
+    // Auto-scroll to latest message on page load
+    scrollToBottom();
 });
 </script>
 <?= $this->endSection() ?>
