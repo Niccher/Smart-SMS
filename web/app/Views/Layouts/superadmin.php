@@ -227,10 +227,8 @@ $systemGithub = $versionData['github_url'] ?? 'https://github.com/niccher/Mpesa_
                 </div>
             </div>
 
-            <footer class="ace-footer">
-                <div>&copy; <?= date('Y') ?> <strong class="text-primary">Mpesa Analyzer Admin</strong></div>
-                <div><span class="badge bg-primary rounded-pill">v<?= esc($systemVersion) ?> SuperAdmin</span></div>
-            </footer>
+            <!-- Ace Footer Bar & Changelog Modal -->
+            <?= $this->include('Layouts/_footer') ?>
         </main>
     </div>
 

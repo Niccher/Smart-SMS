@@ -1,13 +1,42 @@
 {
-  "version": "3.4.0",
-  "github_url": "https://github.com/niccher/Mpesa_Analyzer_App",
+  "version": "3.5.0",
+  "release_date": "2026-09-25",
+  "github_url": "https://github.com/Niccher/Smart-SMS",
+  "android_github_url": "https://github.com/Niccher/MPesa-Analyzer-App",
   "changelog": [
-    "🎨 Global Ace Admin Theme integration across all landing pages, Shield auth views, error templates, and admin dashboard.",
-    "🌓 Seamless Dark Mode support with persistent state and automatic system preference detection.",
-    "📧 Custom Ace-styled HTML email templates for 2FA, account activation, and magic link authentication.",
-    "📱 Android companion app Ace theme alignment (brand colors #438EB9, dynamic theme backgrounds, and dark mode support).",
-    "🔒 Standardized HTTP error pages (400, 401, 403, 404, 500, 503) and admin maintenance mode with Ace branding.",
-    "🧠 Per-user category rules engine with exact/contains matching, hit telemetry, and isolated retroactive backfill.",
-    "🌐 Dynamic versioning API (/api/v1/system/version) serving updated release metadata and changelogs."
+    "⚡ Integrated Redis 7 for high-speed in-memory session persistence and LLM prompt response caching.",
+    "🤖 Conversational AI Financial Assistant added across WebApp dashboard and Android native app with English & Sheng support.",
+    "🔍 Dynamic LLM detection (DeepSeek, Gemini, Qwen) with real-time model telemetry and zero hardcoded strings.",
+    "🛡️ Biometric authentication lifecycle stabilization and race-condition elimination on Android.",
+    "🌐 WebApp mobile API gateway routing (/api/v1/chat) for secure, firewall-friendly mobile AI assistant connectivity.",
+    "📄 Unified multi-release versioning and interactive changelog modal across all admin and landing pages."
+  ],
+  "releases": [
+    {
+      "version": "3.5.0",
+      "date": "2026-09-25",
+      "title": "Redis Caching, AI Financial Assistant & Unified Ecosystem v3.5.0",
+      "highlights": [
+        "⚡ Integrated Redis 7 for high-speed in-memory session persistence and LLM prompt response caching.",
+        "🤖 Conversational AI Financial Assistant added across WebApp dashboard and Android native app with English & Sheng support.",
+        "🔍 Dynamic LLM detection (DeepSeek, Gemini, Qwen) with real-time model telemetry and zero hardcoded strings.",
+        "🛡️ Biometric authentication lifecycle stabilization and race-condition elimination on Android.",
+        "🌐 WebApp mobile API gateway routing (/api/v1/chat) for secure, firewall-friendly mobile AI assistant connectivity.",
+        "📄 Unified multi-release versioning and interactive changelog modal across all admin and landing pages."
+      ]
+    },
+    {
+      "version": "3.4.0",
+      "date": "2026-09-07",
+      "title": "Ace Admin Theme & Dynamic Category Rules Engine",
+      "highlights": [
+        "🎨 Global Ace Admin Theme integration across all landing pages, Shield auth views, error templates, and admin dashboard.",
+        "🌓 Seamless Dark Mode support with persistent state and automatic system preference detection.",
+        "📧 Custom Ace-styled HTML email templates for 2FA, account activation, and magic link authentication.",
+        "📱 Android companion app Ace theme alignment (brand colors #438EB9, dynamic theme backgrounds, and dark mode support).",
+        "🔒 Standardized HTTP error pages (400, 401, 403, 404, 500, 503) and admin maintenance mode with Ace branding.",
+        "🧠 Per-user category rules engine with exact/contains matching, hit telemetry, and isolated retroactive backfill."
+      ]
+    }
   ]
 }

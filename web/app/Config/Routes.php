@@ -178,6 +178,10 @@ $routes->group('api/v1', ['namespace' => 'App\Controllers\Api\V1'], function ($r
     $routes->get('notes/get/(:num)', 'NotesController::noteGet/$1');
     $routes->post('notes/save', 'NotesController::noteSave');
     $routes->get('export/(:any)', 'UploadsController::export/$1');
+
+    // AI Chat & Assistant (Mobile Gateway)
+    $routes->post('chat', 'ChatController::apiChat');
+    $routes->get('chat/info', 'ChatController::apiInfo');
 });
 
 

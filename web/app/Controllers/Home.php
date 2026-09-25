@@ -43,11 +43,11 @@ class Home extends BaseController
             $dbStatus = 'error: ' . $e->getMessage();
         }
 
-        $version = '3.2.0';
+        $version = '3.5.0';
         $jsonPath = APPPATH . 'Config/version.json';
         if (file_exists($jsonPath)) {
             $versionData = json_decode(file_get_contents($jsonPath), true);
-            $version = $versionData['version'] ?? '3.2.0';
+            $version = $versionData['version'] ?? '3.5.0';
         }
 
         $data = [
@@ -66,9 +66,10 @@ class Home extends BaseController
         $jsonPath = APPPATH . 'Config/version.json';
         if (!file_exists($jsonPath)) {
             return $this->response->setJSON([
-                'version' => '3.2.0',
-                'github_url' => 'https://github.com/niccher/Mpesa_Analyzer_App',
-                'changelog' => []
+                'version' => '3.5.0',
+                'github_url' => 'https://github.com/Niccher/Smart-SMS',
+                'changelog' => [],
+                'releases'  => []
             ]);
         }
         $data = json_decode(file_get_contents($jsonPath), true);

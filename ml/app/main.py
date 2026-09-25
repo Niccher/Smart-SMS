@@ -479,7 +479,7 @@ An autonomous **DB-to-DB SMS & Financial Transaction Processor** powered by loca
 * **Autonomous Worker Loop**: Asynchronously processes unprocessed transaction payloads with per-user lock isolation.
 * **Telemetry & Hit Tracking**: Logs per-transaction LLM execution time, token usage, and classification confidence.
 """,
-    version="1.4.0",
+    version="3.5.0",
     contact={
         "name": "Financial Analyzer Ecosystem",
         "url": "https://github.com/niccher/Mpesa_Analyzer_App",

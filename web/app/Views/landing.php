@@ -3,7 +3,7 @@ $versionData = [];
 if (file_exists(APPPATH . 'Config/version.json')) {
     $versionData = json_decode(file_get_contents(APPPATH . 'Config/version.json'), true);
 }
-$systemVersion = $versionData['version'] ?? '3.2.0';
+$systemVersion = $versionData['version'] ?? '3.5.0';
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
@@ -285,7 +285,13 @@ $systemVersion = $versionData['version'] ?? '3.2.0';
             <hr class="mt-4 mb-4 opacity-25">
             <div class="row align-items-center">
                 <div class="col-md-6 text-center text-md-start">
-                    <p class="mb-0 opacity-75 small">&copy; <?= date('Y') ?> Mpesa Analyzer v<?= esc($systemVersion) ?>. All rights reserved.</p>
+                    <p class="mb-0 opacity-75 small">
+                        &copy; <?= date('Y') ?> Mpesa Analyzer
+                        <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#changelogModal" class="badge bg-success-subtle text-success border border-success-subtle ms-1 text-decoration-none font-monospace" title="Click to view v<?= esc($systemVersion) ?> release notes">
+                            <i class="fa-solid fa-code-commit me-1"></i>v<?= esc($systemVersion) ?>
+                        </a>
+                        . All rights reserved.
+                    </p>
                 </div>
                 <div class="col-md-6 text-center text-md-end mt-2 mt-md-0">
                     <p class="mb-0 opacity-75 small">Built with <i class="fa-solid fa-heart text-danger"></i> for financial freedom</p>
@@ -293,6 +299,8 @@ $systemVersion = $versionData['version'] ?? '3.2.0';
             </div>
         </div>
     </footer>
+
+    <?= view('Layouts/_changelog_modal') ?>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>

@@ -265,23 +265,8 @@ $systemGithub = $versionData['github_url'] ?? 'https://github.com/niccher/Mpesa_
                 </div>
             </div>
 
-            <!-- Ace Footer Bar -->
-            <footer class="ace-footer">
-                <div>
-                    &copy; <?= date('Y') ?> <strong class="text-primary">Mpesa Analyzer</strong>. All rights reserved.
-                </div>
-                <div class="d-flex gap-3 align-items-center">
-                    <a href="#" data-bs-toggle="modal" data-bs-target="#changelogModal" class="text-decoration-none text-muted">
-                        <i class="fa-solid fa-code-branch me-1 text-primary"></i> v<?= esc($systemVersion) ?>
-                    </a>
-                    <a href="#" data-bs-toggle="modal" data-bs-target="#docsModal" class="text-decoration-none text-muted">
-                        <i class="fa-solid fa-book-open me-1 text-info"></i> Docs
-                    </a>
-                    <a href="<?= esc($systemGithub) ?>" target="_blank" class="text-decoration-none text-muted">
-                        <i class="fa-brands fa-github me-1"></i> GitHub
-                    </a>
-                </div>
-            </footer>
+            <!-- Ace Footer Bar & Changelog Modal -->
+            <?= $this->include('Layouts/_footer') ?>
         </main>
     </div>
 
@@ -547,31 +532,6 @@ $systemGithub = $versionData['github_url'] ?? 'https://github.com/niccher/Mpesa_
         });
     });
     </script>
-
-    <!-- Changelog & Docs Modals -->
-    <div class="modal fade" id="changelogModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-primary"><i class="fa-solid fa-clock-rotate-left me-2"></i> System Changelog</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <span class="badge bg-primary rounded-pill px-3 py-2 fw-semibold">Version: v<?= esc($systemVersion) ?></span>
-                    </div>
-                    <ul class="list-group list-group-flush small">
-                        <?php foreach ($systemChangelog as $change): ?>
-                            <li class="list-group-item px-0 py-2 border-light d-flex align-items-start">
-                                <i class="fa-solid fa-check text-success me-2 mt-1"></i>
-                                <div><?= esc($change) ?></div>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Scan Progress Modal -->
     <div class="modal fade" id="scanProgressModal" tabindex="-1" aria-labelledby="scanProgressModalLabel" aria-hidden="true">
