@@ -172,12 +172,28 @@
                             </div>
                         </div>
                         <?php if (empty($cron_runs)): ?>
-                            <div class="text-center text-muted p-5">
+                            <div class="text-center text-muted p-5" id="cronRunsEmpty">
                                 <i class="fa-solid fa-inbox fs-1 d-block mb-2"></i>
                                 No runs recorded yet. Runs appear here when a job is executed by the scheduler or manually.
                             </div>
+                            <div class="table-responsive d-none" id="cronRunsTableWrap">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Job</th>
+                                            <th>Type</th>
+                                            <th style="width: 140px;">Trigger</th>
+                                            <th style="width: 170px;">Run At</th>
+                                            <th style="width: 90px;">Status</th>
+                                            <th>Output</th>
+                                            <th style="width: 90px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
                         <?php else: ?>
-                            <div class="table-responsive">
+                            <div class="table-responsive" id="cronRunsTableWrap">
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light">
                                         <tr>
@@ -493,7 +509,113 @@ document.getElementById('cronForm').addEventListener('submit', function(e) {
         });
 });
 
-// Run now
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function showToast(title, icon = 'success') {
+    if (typeof Swal !== 'undefined') {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true
+        });
+        Toast.fire({
+            icon: icon,
+            title: title
+        });
+    } else {
+        showAlert('Cron Jobs', title, icon);
+    }
+}
+
+function attachHistoryHandler(btn) {
+    btn.addEventListener('click', function() {
+        const data = new FormData();
+        data.append('job_key', this.dataset.key);
+        fetch('<?= base_url('admin/crons/history') ?>', { method: 'POST', body: data })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    showHistoryModal(res.name, res.runs || []);
+                } else {
+                    showToast(res.message || 'Failed to load history.', 'error');
+                }
+            })
+            .catch(err => {
+                showToast('Failed to load history: ' + err.message, 'error');
+            });
+    });
+}
+
+function prependRunHistory(res, key) {
+    const emptyNotice = document.getElementById('cronRunsEmpty');
+    const tableWrap = document.getElementById('cronRunsTableWrap');
+    if (emptyNotice) emptyNotice.classList.add('d-none');
+    if (tableWrap) tableWrap.classList.remove('d-none');
+
+    const tbody = document.querySelector('#cronRunsTab tbody');
+    if (!tbody) return;
+
+    const tr = document.createElement('tr');
+    tr.dataset.jobType = res.job_type || '';
+
+    const statusBadge = res.status === 'success'
+        ? '<span class="badge bg-success">Success</span>'
+        : '<span class="badge bg-danger">Error</span>';
+
+    const triggerBadge = '<span class="badge bg-info text-dark"><i class="fa-solid fa-user me-1"></i>Manual</span>';
+    const firstLineOutput = escapeHtml((res.output || '').split('\n')[0] || 'No output');
+    const jobName = escapeHtml(res.job_name || key);
+    const jobKey = escapeHtml(key);
+    const typeLabel = escapeHtml(res.job_type_label || res.job_type || 'Custom');
+    const runTime = escapeHtml(res.last_run_local || res.last_run || 'Just now');
+
+    tr.innerHTML = `
+        <td>
+            <strong>${jobName}</strong>
+            <br><small class="text-muted"><code>${jobKey}</code></small>
+        </td>
+        <td><small>${typeLabel}</small></td>
+        <td>${triggerBadge}</td>
+        <td><small>${runTime}</small></td>
+        <td>${statusBadge}</td>
+        <td>
+            <small class="text-muted d-block text-truncate" style="max-width: 260px;">${firstLineOutput}</small>
+        </td>
+        <td>
+            <button type="button" class="btn btn-outline-secondary btn-sm btn-history"
+                data-key="${jobKey}"
+                data-name="${jobName}"
+                title="View history">
+                <i class="fa-solid fa-clock-rotate-left me-1"></i> History
+            </button>
+        </td>
+    `;
+
+    const histBtn = tr.querySelector('.btn-history');
+    if (histBtn) {
+        attachHistoryHandler(histBtn);
+    }
+
+    tbody.insertBefore(tr, tbody.firstChild);
+
+    const countSpan = document.querySelector('#cronRunsTab .text-muted.small');
+    if (countSpan) {
+        const count = tbody.querySelectorAll('tr').length;
+        countSpan.textContent = `Last ${count} runs`;
+    }
+}
+
+// Run now (AJAX without page reload)
 document.querySelectorAll('.btn-run').forEach(btn => {
     btn.addEventListener('click', function() {
         const key = this.dataset.key;
@@ -508,33 +630,40 @@ document.querySelectorAll('.btn-run').forEach(btn => {
             .then(res => {
                 this.disabled = false;
                 this.innerHTML = original;
-                showOutputModal(res.name || key, res.last_run, res.status, res.output);
-                setTimeout(() => location.reload(), 800);
+
+                // 1. Show output modal and keep it visible
+                showOutputModal(res.job_name || res.name || key, res.last_run, res.status, res.output);
+
+                // 2. Dynamically update row in Jobs table
+                const row = document.querySelector(`tr[data-key="${key}"]`);
+                if (row && row.cells.length >= 4) {
+                    const statusClass = res.status === 'success' ? 'bg-success' : 'bg-danger';
+                    const statusLabel = res.status === 'success' ? 'Success' : 'Error';
+                    row.cells[3].innerHTML = `
+                        <small>${escapeHtml(res.last_run)}</small>
+                        <br>
+                        <span class="badge ${statusClass}">${statusLabel}</span>
+                    `;
+                    row.classList.add('table-success');
+                    setTimeout(() => row.classList.remove('table-success'), 1500);
+                }
+
+                // 3. Prepend into Runs tab
+                prependRunHistory(res, key);
+
+                // 4. Toast notification
+                showToast(res.message || (res.status === 'success' ? 'Job completed successfully.' : 'Job finished with errors.'), res.status === 'success' ? 'success' : 'error');
             })
-            .catch(() => {
+            .catch(err => {
                 this.disabled = false;
                 this.innerHTML = original;
-                showAlert('Cron Jobs', 'Failed to run job.', 'danger');
+                showToast('Failed to run job: ' + (err.message || 'Network error'), 'error');
             });
     });
 });
 
 // View run history
-document.querySelectorAll('.btn-history').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const data = new FormData();
-        data.append('job_key', this.dataset.key);
-        fetch('<?= base_url('admin/crons/history') ?>', { method: 'POST', body: data })
-            .then(r => r.json())
-            .then(res => {
-                if (res.status === 'success') {
-                    showHistoryModal(res.name, res.runs || []);
-                } else {
-                    showAlert('Cron Jobs', res.message || 'Failed to load history.', 'danger');
-                }
-            });
-    });
-});
+document.querySelectorAll('.btn-history').forEach(attachHistoryHandler);
 
 function showHistoryModal(name, runs) {
     document.getElementById('historyTitle').textContent = name + ' — Run History';
@@ -586,7 +715,7 @@ function showOutputModal(name, lastRun, status, output) {
     new bootstrap.Modal(document.getElementById('outputModal')).show();
 }
 
-// Toggle enabled
+// Toggle enabled (SweetAlert toast without full modal)
 document.querySelectorAll('.cron-toggle').forEach(chk => {
     chk.addEventListener('change', function() {
         const data = new FormData();
@@ -594,23 +723,79 @@ document.querySelectorAll('.cron-toggle').forEach(chk => {
         data.append('enabled', this.checked ? '1' : '0');
         fetch('<?= base_url('admin/crons/toggle') ?>', { method: 'POST', body: data })
             .then(r => r.json())
-            .then(res => showAlert('Cron Jobs', res.message, res.status === 'success' ? 'success' : 'danger'));
+            .then(res => {
+                if (res.status === 'success') {
+                    showToast(res.message, 'success');
+                } else {
+                    this.checked = !this.checked;
+                    showToast(res.message || 'Failed to toggle cron job.', 'error');
+                }
+            })
+            .catch(err => {
+                this.checked = !this.checked;
+                showToast('Failed to toggle: ' + err.message, 'error');
+            });
     });
 });
 
-// Delete cron job
+// Delete cron job with SweetAlert2 confirmation and dynamic removal
 document.querySelectorAll('.btn-delete').forEach(btn => {
     btn.addEventListener('click', function() {
         const name = this.dataset.name;
-        if (!confirm('Delete cron job "' + name + '"? This cannot be undone.')) return;
-        const data = new FormData();
-        data.append('job_key', this.dataset.key);
-        fetch('<?= base_url('admin/crons/delete') ?>', { method: 'POST', body: data })
-            .then(r => r.json())
-            .then(res => {
-                showAlert('Cron Jobs', res.message, res.status === 'success' ? 'success' : 'danger');
-                if (res.status === 'success') setTimeout(() => location.reload(), 600);
+        const key = this.dataset.key;
+        const row = this.closest('tr');
+
+        const doDelete = () => {
+            const data = new FormData();
+            data.append('job_key', key);
+            fetch('<?= base_url('admin/crons/delete') ?>', { method: 'POST', body: data })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        showToast(res.message, 'success');
+                        if (row) {
+                            row.style.transition = 'all 0.3s ease';
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateX(20px)';
+                            setTimeout(() => {
+                                row.remove();
+                                const tbody = document.querySelector('#cronJobsTab tbody');
+                                if (tbody && tbody.children.length === 0) {
+                                    location.reload();
+                                }
+                            }, 300);
+                        }
+                    } else {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Error', res.message || 'Failed to delete job.', 'error');
+                        } else {
+                            showAlert('Cron Jobs', res.message || 'Failed to delete job.', 'danger');
+                        }
+                    }
+                })
+                .catch(err => {
+                    showToast('Failed to delete job: ' + err.message, 'error');
+                });
+        };
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Delete Cron Job?',
+                html: `Are you sure you want to delete <strong>${escapeHtml(name)}</strong>?<br><small class="text-muted">This cannot be undone.</small>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fa-solid fa-trash me-1"></i> Yes, Delete',
+                cancelButtonText: 'Cancel'
+            }).then(result => {
+                if (result.isConfirmed) doDelete();
             });
+        } else {
+            if (confirm('Delete cron job "' + name + '"? This cannot be undone.')) {
+                doDelete();
+            }
+        }
     });
 });
 

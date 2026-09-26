@@ -298,37 +298,82 @@ document.querySelectorAll('.btn-stop-job').forEach(btn => {
     btn.addEventListener('click', function(e) {
         e.preventDefault();
         const jobId = this.getAttribute('data-job-id');
-        if (!confirm('Are you sure you want to stop/cancel this ML job?')) {
-            return;
+        const self = this;
+
+        const executeStop = () => {
+            self.disabled = true;
+            const formData = new FormData();
+            formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+            formData.append('job_id', jobId);
+
+            fetch('<?= base_url('dashboard/history/jobs/stop') ?>', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    '<?= csrf_header() ?>': '<?= csrf_hash() ?>'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Job Stopped',
+                            text: data.message,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                    const row = self.closest('tr');
+                    if (row) {
+                        const statusBadge = row.querySelector('.badge');
+                        if (statusBadge) {
+                            statusBadge.className = 'badge bg-warning text-dark';
+                            statusBadge.textContent = 'Cancelled';
+                        }
+                        self.remove();
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error', data.message, 'error');
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                    self.disabled = false;
+                }
+            })
+            .catch(err => {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', 'Failed to send request: ' + err.message, 'error');
+                } else {
+                    alert('Failed to send request: ' + err.message);
+                }
+                self.disabled = false;
+            });
+        };
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Stop ML Job?',
+                text: 'Are you sure you want to stop/cancel Job #' + jobId + '?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Stop It!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeStop();
+                }
+            });
+        } else {
+            if (confirm('Are you sure you want to stop/cancel this ML job?')) {
+                executeStop();
+            }
         }
-        
-        this.disabled = true;
-        const formData = new FormData();
-        formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
-        formData.append('job_id', jobId);
-        
-        fetch('<?= base_url('dashboard/history/jobs/stop') ?>', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                '<?= csrf_header() ?>': '<?= csrf_hash() ?>'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                alert(data.message);
-                window.location.reload();
-            } else {
-                alert('Error: ' + data.message);
-                this.disabled = false;
-            }
-        })
-        .catch(err => {
-            alert('Failed to send request: ' + err.message);
-            this.disabled = false;
-        });
     });
 });
 </script>

@@ -193,11 +193,28 @@ class Crons extends BaseController
 
         CronLogger::log($key, $job['name'] ?? $key, $job['type'], $res['status'], $res['output'], 'manual');
 
+        $types = CronRunner::types();
+        $typeMeta = $types[$job['type']] ?? ['label' => $job['type']];
+
+        $runLocal = $job['last_run'];
+        try {
+            $runLocal = (new \DateTimeImmutable($job['last_run'], new \DateTimeZone('UTC')))
+                ->setTimezone(new \DateTimeZone('Africa/Nairobi'))
+                ->format('d M Y, g:i A');
+        } catch (\Throwable $e) {
+            $runLocal = $job['last_run'];
+        }
+
         return $this->respond([
             'status' => $res['status'],
             'message' => $res['status'] === 'success' ? 'Job ran successfully.' : 'Job finished with errors.',
             'output' => $res['output'],
             'last_run' => $job['last_run'],
+            'last_run_local' => $runLocal,
+            'job_key' => $key,
+            'job_name' => $job['name'] ?? $key,
+            'job_type' => $job['type'],
+            'job_type_label' => $typeMeta['label'] ?? $job['type'],
         ]);
     }
 

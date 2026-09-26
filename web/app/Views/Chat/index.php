@@ -399,41 +399,75 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Clear conversation
     clearChatBtn.addEventListener('click', async function () {
-        if (!confirm('Clear your chat conversation history?')) return;
-        try {
-            clearChatBtn.disabled = true;
-            await fetch('<?= base_url('dashboard/chat/clear') ?>', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-            conversationHistory = [];
-            chatStream.innerHTML = `
-                <div class="d-flex mb-3 ai-message-row">
-                    <div class="flex-shrink-0 me-2">
-                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-xs" style="width: 38px; height: 38px;">
-                            <i class="fa-solid fa-robot"></i>
-                        </div>
-                    </div>
-                    <div class="flex-grow-1" style="max-width: 82%;">
-                        <div class="p-3 rounded-3 shadow-xs chat-bubble-ai">
-                            <div class="fw-semibold text-primary mb-1 small d-flex align-items-center gap-2">
-                                <span>M-Pesa Smart Advisor</span>
-                                <span class="badge bg-secondary-subtle text-secondary font-monospace" style="font-size: 0.65rem;">System</span>
+        const doClear = async () => {
+            try {
+                clearChatBtn.disabled = true;
+                await fetch('<?= base_url('dashboard/chat/clear') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                conversationHistory = [];
+                chatStream.innerHTML = `
+                    <div class="d-flex mb-3 ai-message-row">
+                        <div class="flex-shrink-0 me-2">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-xs" style="width: 38px; height: 38px;">
+                                <i class="fa-solid fa-robot"></i>
                             </div>
-                            <p class="mb-0 text-muted small">
-                                Conversation history cleared. Feel free to ask a new question about your M-Pesa finances!
-                            </p>
                         </div>
-                        <div class="small text-muted mt-1 ms-1" style="font-size: 0.72rem;">Just now</div>
+                        <div class="flex-grow-1" style="max-width: 82%;">
+                            <div class="p-3 rounded-3 shadow-xs chat-bubble-ai">
+                                <div class="fw-semibold text-primary mb-1 small d-flex align-items-center gap-2">
+                                    <span>M-Pesa Smart Advisor</span>
+                                    <span class="badge bg-secondary-subtle text-secondary font-monospace" style="font-size: 0.65rem;">System</span>
+                                </div>
+                                <p class="mb-0 text-muted small">
+                                    Conversation history cleared. Feel free to ask a new question about your M-Pesa finances!
+                                </p>
+                            </div>
+                            <div class="small text-muted mt-1 ms-1" style="font-size: 0.72rem;">Just now</div>
+                        </div>
                     </div>
-                </div>
-            `;
-        } catch (err) {
-            alert('Failed to clear conversation history: ' + err.message);
-        } finally {
-            clearChatBtn.disabled = false;
+                `;
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Conversation cleared',
+                        showConfirmButton: false,
+                        timer: 2500
+                    });
+                }
+            } catch (err) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', 'Failed to clear conversation: ' + err.message, 'error');
+                } else {
+                    alert('Failed to clear conversation history: ' + err.message);
+                }
+            } finally {
+                clearChatBtn.disabled = false;
+            }
+        };
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Clear Conversation?',
+                text: 'Are you sure you want to clear your chat conversation history?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, clear it',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) doClear();
+            });
+        } else {
+            if (confirm('Clear your chat conversation history?')) {
+                doClear();
+            }
         }
     });
 
