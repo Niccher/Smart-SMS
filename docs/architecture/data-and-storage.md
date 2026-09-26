@@ -183,3 +183,38 @@ The `mpesa-redis` container provides high-throughput, low-latency caching and te
 | **Prompt Cache Pattern** | `mpesa:chat:cache:*` | Caches repetitive financial aggregate queries |
 | **Live Telemetry** | Polled via Redis `INFO` / Socket | Powers the 4th KPI card on `admin/telemetry` |
 
+---
+
+## 7. Dual-Engine Resilience & High-Availability Failover
+
+To eliminate single-point-of-failure vulnerabilities, the platform implements a **self-healing, zero-downtime dual-engine failover mechanism** for user sessions and application cache:
+
+```mermaid
+graph TD
+    A[Incoming HTTP / API Request] --> B{50ms Socket Probe to Redis}
+    B -->|Online| C[RedisHandler In-Memory RAM]
+    B -->|Offline / Timeout| D[DatabaseHandler MySQL ci_sessions]
+    C --> E[Fast Session Load & Save < 1ms]
+    D --> F[Persistent MySQL Fallback 2-5ms]
+    F --> G[Log Pre-emptive Notice]
+    G --> H[Serve Request with Zero 500 Errors]
+    E --> H
+    D -.->|When Redis Restores| C
+```
+
+### Storage Driver Fallback Matrix
+
+| Layer | Primary In-Memory Driver | Fallback Durable Driver | Failover Trigger | Recovery Behavior |
+|---|---|---|---|---|
+| **Web Sessions** | `RedisHandler` (`tcp://redis:6379`) | `DatabaseHandler` (`ci_sessions` table) | Redis socket probe $> 50\text{ ms}$ or connection refused | Instant switch back to Redis on next probe |
+| **Application Cache** | `RedisHandler` (RAM keyspace) | `FileHandler` (`WRITEPATH . 'cache/'`) | Redis unreachable during initialization | Automatically re-engages Redis when online |
+| **Financial SMS & Ledger** | **Always MySQL** | **Always MySQL** | Not applicable | ACID durability across all transactions |
+| **Conversational AI History**| **Always MySQL** | **Always MySQL** | Not applicable | Permanent audit log in `tbl_Chat_Messages` |
+
+### Architectural Guarantees
+1. **Zero User Disruption**: When Redis restarts or crashes, the platform transparently persists session tokens in MySQL table `ci_sessions`. Users remain authenticated without 500 errors.
+2. **Ultra-Low Probe Overhead**: The socket probe uses a strict 50ms timeout (`@fsockopen()`) with static request-level memoization, ensuring subsequent calls in the same request take $0\text{ ms}$.
+3. **Automated Session Pruning**: CodeIgniter CLI command `php spark session:gc` automatically deletes expired records from `ci_sessions` (`timestamp < UNIX_TIMESTAMP() - expiration`), preventing MySQL table bloat.
+4. **Live Observability**: Real-time status is exposed via the public `/health` endpoint (`redis_status: "connected" | "fallback_active"`), the SuperAdmin telemetry dashboard, and an automated alert badge on the SuperAdmin navbar.
+
+

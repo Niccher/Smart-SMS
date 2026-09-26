@@ -87,6 +87,16 @@ $systemGithub = $versionData['github_url'] ?? 'https://github.com/niccher/Mpesa_
         </div>
 
         <div class="ace-nav-actions">
+            <?php
+            $redisHostConfigured = env('REDIS_HOST') ?: getenv('REDIS_HOST');
+            $redisIsAlive = \Config\Session::isRedisAlive($redisHostConfigured ?: '127.0.0.1', (int)(env('REDIS_PORT') ?: getenv('REDIS_PORT') ?: 6379));
+            ?>
+            <?php if ($redisHostConfigured && !$redisIsAlive): ?>
+                <a href="<?= base_url('admin/telemetry') ?>" class="badge bg-warning text-dark border border-warning px-2 py-1.5 text-decoration-none d-none d-sm-inline-flex align-items-center" title="Redis is unreachable; MySQL ci_sessions & local file cache fallback is active">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> MySQL Fallback Active
+                </a>
+            <?php endif; ?>
+
             <a href="<?= url_to('DashboardController::index') ?>" class="ace-nav-btn bg-primary">
                 <i class="fa-solid fa-house"></i> User Dashboard
             </a>

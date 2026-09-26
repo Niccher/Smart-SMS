@@ -40,6 +40,18 @@ class SessionGc extends BaseCommand
             }
         }
 
+        // Clean expired MySQL fallback sessions (ci_sessions)
+        if ($db->tableExists('ci_sessions')) {
+            $sessionConfig = config('Session');
+            $expiration = $sessionConfig->expiration ?? 2592000;
+            $cutoff = time() - $expiration;
+            $fields = $db->getFieldNames('ci_sessions');
+            if (in_array('timestamp', $fields, true)) {
+                $count = $db->table('ci_sessions')->where('timestamp <', $cutoff)->delete();
+                $deleted += $count;
+            }
+        }
+
         CLI::write('Session cleanup complete. ' . $deleted . ' expired records removed.', 'green');
     }
 }

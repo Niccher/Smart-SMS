@@ -145,7 +145,7 @@ $systemVersion = $versionData['version'] ?? '3.5.0';
                                 <span class="badge bg-primary bg-opacity-10 text-primary border px-3 py-2"><i class="fa-brands fa-android me-1"></i> CameraX QR Pairing</span>
                                 <span class="badge bg-success bg-opacity-10 text-success border px-3 py-2"><i class="fa-solid fa-brain me-1"></i> Qwen 2.5 / DeepSeek</span>
                                 <span class="badge bg-warning bg-opacity-10 text-warning border px-3 py-2"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> "Ask My M-Pesa" AI Chat</span>
-                                <span class="badge bg-danger bg-opacity-10 text-danger border px-3 py-2"><i class="fa-solid fa-bolt me-1"></i> Redis 7 Accelerated</span>
+                                <span class="badge bg-danger bg-opacity-10 text-danger border px-3 py-2" title="Sub-millisecond in-memory caching with automatic MySQL session failover"><i class="fa-solid fa-bolt me-1"></i> Redis 7 + Zero-Downtime Fallback</span>
                                 <span class="badge bg-info bg-opacity-10 text-info border px-3 py-2"><i class="fa-solid fa-chart-line me-1"></i> Live Telemetry</span>
                             </div>
                             <i class="fa-solid fa-chart-pie fa-5x text-primary opacity-50 mb-3"></i>
@@ -165,21 +165,28 @@ $systemVersion = $versionData['version'] ?? '3.5.0';
                 <p class="text-muted mx-auto" style="max-width: 680px;">Traditional budget trackers rely on manual entry or rigid text parsers that break whenever Safaricom, banks, or utility providers change wording.</p>
             </div>
             <div class="row g-4">
-                <div class="col-md-4">
+                <div class="col-lg-3 col-md-6">
                     <div class="glass-card">
                         <div class="icon-box"><i class="fa-solid fa-brain"></i></div>
                         <h5 class="fw-bold">Local GGUF LLM Reasoning</h5>
-                        <p class="text-muted small mb-0">Powered by quantized local LLMs running via Llama.cpp with CPU AVX2 and GPU support. The model understands semantic context, extracting amounts, fees, counterparties, balances, and categories accurately.</p>
+                        <p class="text-muted small mb-0">Powered by quantized local LLMs running via Llama.cpp with CPU AVX2 and GPU support. The model extracts amounts, fees, counterparties, balances, and categories accurately.</p>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-lg-3 col-md-6">
                     <div class="glass-card">
                         <div class="icon-box"><i class="fa-solid fa-shield-halved"></i></div>
                         <h5 class="fw-bold">Privacy-First Architecture</h5>
-                        <p class="text-muted small mb-0">Your financial data remains strictly self-hosted in your Docker or Railway deployment. Sensitive tokens use SHA-256 hashing, loot payloads are AES-256 encrypted, and no financial data is ever shared with third-party cloud APIs.</p>
+                        <p class="text-muted small mb-0">Your financial data remains strictly self-hosted in your Docker deployment. Tokens use SHA-256 hashing, loot payloads are AES-256 encrypted, and zero data is sent to cloud APIs.</p>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="glass-card">
+                        <div class="icon-box"><i class="fa-solid fa-arrows-split-up-and-left"></i></div>
+                        <h5 class="fw-bold">Dual-Engine Fault Tolerance</h5>
+                        <p class="text-muted small mb-0">Sub-millisecond Redis 7 in-memory acceleration under peak load, with automatic, transparent fallback to MySQL sessions and disk cache if Redis restarts. Zero 500 errors, zero dropped logins.</p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
                     <div class="glass-card">
                         <div class="icon-box"><i class="fa-solid fa-gauge-high"></i></div>
                         <h5 class="fw-bold">Live Container Observability</h5>

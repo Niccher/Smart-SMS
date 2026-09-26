@@ -448,9 +448,11 @@ class Telemetry extends BaseController
 
         if (!extension_loaded('redis')) {
             return [
-                'status'     => 'offline',
-                'error'      => 'PHP Redis extension is not loaded',
-                'latency_ms' => 0,
+                'status'         => 'offline',
+                'error'          => 'PHP Redis extension is not loaded',
+                'latency_ms'     => 0,
+                'session_driver' => 'MySQL ci_sessions (Fallback Active)',
+                'fallback_active'=> true,
             ];
         }
 
@@ -460,9 +462,11 @@ class Telemetry extends BaseController
             $connected = @$redis->connect($host, $port, 0.5);
             if (!$connected) {
                 return [
-                    'status'     => 'offline',
-                    'error'      => "Cannot connect to Redis at {$host}:{$port}",
-                    'latency_ms' => 0,
+                    'status'         => 'offline',
+                    'error'          => "Cannot connect to Redis at {$host}:{$port}",
+                    'latency_ms'     => 0,
+                    'session_driver' => 'MySQL ci_sessions (Fallback Active)',
+                    'fallback_active'=> true,
                 ];
             }
 
@@ -501,6 +505,8 @@ class Telemetry extends BaseController
                 'uptime_sec'        => $uptimeSec,
                 'uptime_formatted'  => $this->formatUptime($uptimeSec),
                 'connected_clients' => (int) ($info['connected_clients'] ?? 0),
+                'session_driver'    => 'Redis (In-Memory Primary)',
+                'fallback_active'   => false,
                 'memory' => [
                     'used_bytes' => $usedMem,
                     'used_mb'    => $memUsedMb,
@@ -520,9 +526,11 @@ class Telemetry extends BaseController
             ];
         } catch (\Throwable $e) {
             return [
-                'status'     => 'offline',
-                'error'      => $e->getMessage(),
-                'latency_ms' => 0,
+                'status'         => 'offline',
+                'error'          => $e->getMessage(),
+                'latency_ms'     => 0,
+                'session_driver' => 'MySQL ci_sessions (Fallback Active)',
+                'fallback_active'=> true,
             ];
         }
     }

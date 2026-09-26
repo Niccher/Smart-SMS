@@ -43,6 +43,13 @@ class Home extends BaseController
             $dbStatus = 'error: ' . $e->getMessage();
         }
 
+        $redisHost = env('REDIS_HOST') ?: getenv('REDIS_HOST');
+        $redisPort = (int) (env('REDIS_PORT') ?: getenv('REDIS_PORT') ?: 6379);
+        $redisAlive = \Config\Session::isRedisAlive($redisHost ?: '127.0.0.1', $redisPort);
+
+        $sessionConfig = config('Session');
+        $cacheConfig   = config('Cache');
+
         $version = '3.5.0';
         $jsonPath = APPPATH . 'Config/version.json';
         if (file_exists($jsonPath)) {
@@ -51,11 +58,18 @@ class Home extends BaseController
         }
 
         $data = [
-            'status'    => $dbStatus === 'ok' ? 'ok' : 'degraded',
-            'database'  => $dbStatus,
-            'timestamp' => date('c'),
-            'app'       => 'Mpesa Analyzer',
-            'version'   => $version,
+            'status'         => $dbStatus === 'ok' ? 'ok' : 'degraded',
+            'database'       => $dbStatus,
+            'redis_status'   => $redisAlive ? 'connected' : ($redisHost ? 'fallback_active' : 'not_configured'),
+            'session_engine' => ($sessionConfig->driver ?? '') === \CodeIgniter\Session\Handlers\RedisHandler::class ? 'redis' : 'mysql',
+            'cache_engine'   => ($cacheConfig->handler ?? '') === 'redis' ? 'redis' : 'file',
+            'resilience'     => [
+                'mode'                => $redisAlive ? 'in_memory_primary' : 'persistent_fallback',
+                'failover_configured' => true,
+            ],
+            'timestamp'      => date('c'),
+            'app'            => 'Smart Finance Platform',
+            'version'        => $version,
         ];
 
         return $this->response->setJSON($data);

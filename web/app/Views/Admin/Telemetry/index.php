@@ -191,6 +191,9 @@ $redis = $metrics['redis'] ?? [];
                 <span>Keys: <strong id="kpiRedisKeys"><?= number_format($redis['keyspace']['total_keys'] ?? 0) ?></strong></span>
                 <span>Hit Rate: <strong id="kpiRedisHitRate" class="text-success"><?= esc($redis['keyspace']['hit_rate_pct'] ?? 100) ?>%</strong></span>
             </div>
+            <div class="small text-muted d-flex justify-content-between mb-2">
+                <span>Driver: <strong id="kpiRedisDriver" class="<?= empty($redis['fallback_active']) ? 'text-primary' : 'text-warning' ?>"><?= esc($redis['session_driver'] ?? 'Redis (In-Memory Primary)') ?></strong></span>
+            </div>
             <!-- Live Redis Ping Latency Sparkline -->
             <div class="pt-2 border-top">
                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -864,6 +867,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (kpiRedisKeys) kpiRedisKeys.textContent = (r.keyspace?.total_keys || 0).toLocaleString();
             const kpiRedisHitRate = document.getElementById('kpiRedisHitRate');
             if (kpiRedisHitRate) kpiRedisHitRate.textContent = (r.keyspace?.hit_rate_pct ?? 100) + '%';
+            const kpiRedisDriver = document.getElementById('kpiRedisDriver');
+            if (kpiRedisDriver) {
+                kpiRedisDriver.textContent = r.session_driver || (r.status === 'online' ? 'Redis (In-Memory Primary)' : 'MySQL ci_sessions (Fallback Active)');
+                kpiRedisDriver.className = r.status === 'online' ? 'text-primary' : 'text-warning';
+            }
 
             const redisLatency = r.latency_ms || 0;
             const sparkRedisOpsVal = document.getElementById('sparkRedisOpsVal');

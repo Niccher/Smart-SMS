@@ -178,9 +178,14 @@ class Cache extends BaseConfig
             $this->redis['host'] = $redisHost;
             $this->redis['port'] = $redisPort;
 
-            if (extension_loaded('redis')) {
+            if (\Config\Session::isRedisAlive($redisHost, $redisPort)) {
                 $this->handler       = 'redis';
                 $this->backupHandler = 'file';
+            } else {
+                // High-Availability Fallback: Gracefully store cache files locally on disk
+                $this->handler       = 'file';
+                $this->backupHandler = 'dummy';
+                log_message('notice', "Redis ({$redisHost}:{$redisPort}) is offline; cache handler dynamically engaged file fallback.");
             }
         }
     }

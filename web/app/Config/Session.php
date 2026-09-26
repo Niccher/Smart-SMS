@@ -100,16 +100,61 @@ class Session extends BaseConfig
      */
     public ?string $DBGroup = null;
 
+    /**
+     * Cache for Redis probe status within the current request lifecycle.
+     */
+    private static array $redisProbeCache = [];
+
+    /**
+     * Fast non-blocking socket probe to test if Redis is accepting connections.
+     * Default timeout is 50ms (0.05s).
+     */
+    public static function isRedisAlive(?string $host = null, int $port = 6379, float $timeout = 0.05): bool
+    {
+        $host = $host ?: (env('REDIS_HOST') ?: getenv('REDIS_HOST') ?: '127.0.0.1');
+        $port = $port ?: (int) (env('REDIS_PORT') ?: getenv('REDIS_PORT') ?: 6379);
+
+        if (!extension_loaded('redis')) {
+            return false;
+        }
+
+        $cacheKey = "{$host}:{$port}";
+        if (array_key_exists($cacheKey, self::$redisProbeCache)) {
+            return self::$redisProbeCache[$cacheKey];
+        }
+
+        $errno = 0;
+        $errstr = '';
+        $fp = @fsockopen($host, $port, $errno, $errstr, $timeout);
+
+        if ($fp !== false) {
+            fclose($fp);
+            self::$redisProbeCache[$cacheKey] = true;
+            return true;
+        }
+
+        self::$redisProbeCache[$cacheKey] = false;
+        return false;
+    }
+
     public function __construct()
     {
         parent::__construct();
 
         $redisHost = env('REDIS_HOST') ?: getenv('REDIS_HOST');
-        $redisPort = env('REDIS_PORT') ?: getenv('REDIS_PORT') ?: '6379';
+        $redisPort = (int) (env('REDIS_PORT') ?: getenv('REDIS_PORT') ?: 6379);
 
-        if ($redisHost && extension_loaded('redis')) {
+        if ($redisHost && self::isRedisAlive($redisHost, $redisPort)) {
             $this->driver   = \CodeIgniter\Session\Handlers\RedisHandler::class;
             $this->savePath = "tcp://{$redisHost}:{$redisPort}";
+        } else {
+            // High-Availability Fallback: Gracefully store sessions in MySQL ci_sessions
+            $this->driver   = \CodeIgniter\Session\Handlers\DatabaseHandler::class;
+            $this->savePath = 'ci_sessions';
+
+            if ($redisHost) {
+                log_message('notice', "Redis ({$redisHost}:{$redisPort}) is offline; session driver dynamically engaged MySQL ci_sessions fallback.");
+            }
         }
     }
 }
