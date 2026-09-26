@@ -215,6 +215,31 @@ const ALLOWED_REMOVE_URL   = '<?= base_url('admin/ml/allowed/remove') ?>';
 const ALLOWED_RESET_URL    = '<?= base_url('admin/ml/allowed/reset') ?>';
 const ALLOWED_SEED_URL     = '<?= base_url('admin/ml/allowed/seed') ?>';
 
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function showToast(title, icon = 'success') {
+    if (typeof Swal !== 'undefined') {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+        Toast.fire({ icon, title });
+    } else {
+        showAlert('Senders', title, icon);
+    }
+}
+
 // ---- Add Sender Form ----
 document.getElementById('allowedForm').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -223,38 +248,94 @@ document.getElementById('allowedForm').addEventListener('submit', function(e) {
     btn.disabled = true;
     fetch(ALLOWED_ADD_URL, { method: 'POST', body: data })
         .then(r => r.json()).then(res => {
-            showAlert('Senders', res.message, res.status === 'success' ? 'success' : 'danger');
-            if (res.status === 'success') setTimeout(() => window.location.reload(), 1200);
+            showToast(res.message, res.status === 'success' ? 'success' : 'error');
+            if (res.status === 'success') setTimeout(() => window.location.reload(), 1000);
         })
-        .catch(err => showAlert('Error', err.message, 'danger'))
+        .catch(err => showToast(err.message || 'Network error', 'error'))
         .finally(() => { btn.disabled = false; });
 });
 
 // ---- Remove single ----
-document.querySelectorAll('.remove-btn').forEach(btn => {
+function attachRemoveHandler(btn) {
     btn.addEventListener('click', function() {
         const sender = this.dataset.sender;
-        if (!confirm('Remove "' + sender + '" from the list?')) return;
-        const data = new FormData();
-        data.append('sender', sender);
-        fetch(ALLOWED_REMOVE_URL, { method: 'POST', body: data })
-            .then(r => r.json()).then(res => {
-                showAlert('Senders', res.message, res.status === 'success' ? 'success' : 'danger');
-                if (res.status === 'success') setTimeout(() => window.location.reload(), 1200);
-            })
-            .catch(err => showAlert('Error', err.message, 'danger'));
+        const row = this.closest('tr');
+
+        const doRemove = () => {
+            const data = new FormData();
+            data.append('sender', sender);
+            fetch(ALLOWED_REMOVE_URL, { method: 'POST', body: data })
+                .then(r => r.json()).then(res => {
+                    if (res.status === 'success') {
+                        showToast(res.message, 'success');
+                        if (row) {
+                            row.style.transition = 'all 0.3s ease';
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateX(20px)';
+                            setTimeout(() => {
+                                row.remove();
+                                updateBulkBar();
+                                filterTable();
+                            }, 300);
+                        }
+                    } else {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Error', res.message, 'error');
+                        } else {
+                            showAlert('Error', res.message, 'danger');
+                        }
+                    }
+                })
+                .catch(err => showToast(err.message, 'error'));
+        };
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Remove Sender?',
+                html: `Remove <strong>${escapeHtml(sender)}</strong> from the allowed list?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fa-solid fa-trash me-1"></i> Yes, Remove',
+                cancelButtonText: 'Cancel'
+            }).then(result => {
+                if (result.isConfirmed) doRemove();
+            });
+        } else {
+            if (confirm('Remove "' + sender + '" from the list?')) doRemove();
+        }
     });
-});
+}
+document.querySelectorAll('.remove-btn').forEach(attachRemoveHandler);
 
 // ---- Reset / Seed ----
 document.getElementById('resetBtn').addEventListener('click', function() {
-    if (!confirm('This will re-seed the list with all default finance senders. Existing custom entries will remain. Continue?')) return;
-    fetch(ALLOWED_SEED_URL, { method: 'POST' })
-        .then(r => r.json()).then(res => {
-            showAlert('Senders', res.message, res.status === 'success' ? 'success' : 'danger');
-            if (res.status === 'success') setTimeout(() => window.location.reload(), 1200);
-        })
-        .catch(err => showAlert('Error', err.message, 'danger'));
+    const doSeed = () => {
+        fetch(ALLOWED_SEED_URL, { method: 'POST' })
+            .then(r => r.json()).then(res => {
+                showToast(res.message, res.status === 'success' ? 'success' : 'error');
+                if (res.status === 'success') setTimeout(() => window.location.reload(), 1200);
+            })
+            .catch(err => showToast(err.message, 'error'));
+    };
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Reset to Defaults?',
+            text: 'This will re-seed the list with all default finance senders. Existing custom entries will remain. Continue?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#0d6efd',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Re-seed',
+            cancelButtonText: 'Cancel'
+        }).then(result => {
+            if (result.isConfirmed) doSeed();
+        });
+    } else {
+        if (confirm('This will re-seed the list with all default finance senders. Existing custom entries will remain. Continue?')) doSeed();
+    }
 });
 
 // ---- Bulk Selection ----
@@ -274,7 +355,7 @@ function updateBulkBar() {
         selectedCount.textContent = checked.length;
     } else {
         bulkActionBar.style.display = 'none';
-        selectAll.checked = false;
+        if (selectAll) selectAll.checked = false;
     }
 }
 
@@ -292,54 +373,127 @@ document.querySelectorAll('.row-checkbox').forEach(cb => {
 applyBulkBtn?.addEventListener('click', function() {
     const senders = getChecked().map(cb => cb.value);
     if (senders.length === 0) return;
+    const cat = bulkCategory.value;
     applyBulkBtn.disabled = true;
     applyBulkBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
     const data = new FormData();
     senders.forEach(s => data.append('senders[]', s));
-    data.append('category', bulkCategory.value);
+    data.append('category', cat);
     fetch(BULK_CATEGORIZE_URL, { method: 'POST', body: data })
         .then(r => r.json()).then(res => {
-            showAlert('Bulk Update', res.message, res.status === 'success' ? 'success' : 'danger');
-            if (res.status === 'success') setTimeout(() => window.location.reload(), 1200);
+            if (res.status === 'success') {
+                showToast(res.message, 'success');
+                senders.forEach(s => {
+                    const row = document.querySelector(`tr[data-sender="${s}"]`);
+                    if (row) {
+                        row.dataset.category = cat;
+                        renderCatDisplay(row, cat);
+                        const sel = row.querySelector('.cat-select');
+                        if (sel) sel.value = cat;
+                        row.classList.add('table-success');
+                        setTimeout(() => row.classList.remove('table-success'), 1500);
+                    }
+                });
+                updateBulkBar();
+                filterTable();
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
         })
-        .catch(err => showAlert('Error', err.message, 'danger'))
+        .catch(err => showToast(err.message, 'error'))
         .finally(() => { applyBulkBtn.disabled = false; applyBulkBtn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Apply'; });
 });
 
 bulkRemoveBtn?.addEventListener('click', function() {
     const senders = getChecked().map(cb => cb.value);
     if (senders.length === 0) return;
-    if (!confirm('Remove ' + senders.length + ' senders?')) return;
-    bulkRemoveBtn.disabled = true;
-    const data = new FormData();
-    senders.forEach(s => data.append('senders[]', s));
-    fetch('<?= base_url('admin/ml/allowed/bulk-remove') ?>', { method: 'POST', body: data })
-        .then(r => r.json()).then(res => {
-            showAlert('Bulk Remove', res.message, res.status === 'success' ? 'success' : 'danger');
-            if (res.status === 'success') setTimeout(() => window.location.reload(), 1200);
-        })
-        .catch(err => showAlert('Error', err.message, 'danger'))
-        .finally(() => { bulkRemoveBtn.disabled = false; });
+
+    const doBulkRemove = () => {
+        bulkRemoveBtn.disabled = true;
+        const data = new FormData();
+        senders.forEach(s => data.append('senders[]', s));
+        fetch('<?= base_url('admin/ml/allowed/bulk-remove') ?>', { method: 'POST', body: data })
+            .then(r => r.json()).then(res => {
+                if (res.status === 'success') {
+                    showToast(res.message, 'success');
+                    senders.forEach(s => {
+                        const row = document.querySelector(`tr[data-sender="${s}"]`);
+                        if (row) {
+                            row.style.transition = 'all 0.3s ease';
+                            row.style.opacity = '0';
+                            setTimeout(() => row.remove(), 300);
+                        }
+                    });
+                    setTimeout(() => {
+                        updateBulkBar();
+                        filterTable();
+                    }, 350);
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            })
+            .catch(err => showToast(err.message, 'error'))
+            .finally(() => { bulkRemoveBtn.disabled = false; });
+    };
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Remove Senders?',
+            text: `Remove ${senders.length} selected sender(s) from the allowed list?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: `Yes, remove ${senders.length} senders`,
+            cancelButtonText: 'Cancel'
+        }).then(result => {
+            if (result.isConfirmed) doBulkRemove();
+        });
+    } else {
+        if (confirm('Remove ' + senders.length + ' senders?')) doBulkRemove();
+    }
 });
 
-// ---- Inline Category Edit ----
-document.querySelectorAll('.edit-cat-btn').forEach(btn => {
+// Helper to render cat display without page reload
+function renderCatDisplay(row, cat) {
+    const td = row.querySelector('td:nth-child(3)');
+    if (!td) return;
+    const catDisplay = td.querySelector('.cat-display');
+    if (!catDisplay) return;
+
+    const catClass = cat ? 'cat-' + cat.replace(/[\/ ]/g, '-') : 'cat-uncategorized';
+    catDisplay.innerHTML = cat 
+        ? `<span class="cat-badge ${catClass}">${escapeHtml(cat)}</span>`
+        : '<span class="text-muted small">—</span>';
+    catDisplay.innerHTML += `
+        <button class="btn btn-link btn-sm p-0 ms-1 text-muted edit-cat-btn" title="Edit category" style="font-size:0.7rem;">
+            <i class="fa-solid fa-pen"></i>
+        </button>
+    `;
+    const editBtn = catDisplay.querySelector('.edit-cat-btn');
+    if (editBtn) attachEditCatBtn(editBtn);
+    catDisplay.style.display = '';
+    const inlineEdit = td.querySelector('.inline-edit-cat');
+    if (inlineEdit) inlineEdit.classList.remove('active');
+}
+
+function attachEditCatBtn(btn) {
     btn.addEventListener('click', function() {
         const td = this.closest('td');
         td.querySelector('.cat-display').style.display = 'none';
         td.querySelector('.inline-edit-cat').classList.add('active');
     });
-});
+}
 
-document.querySelectorAll('.cancel-cat-btn').forEach(btn => {
+function attachCancelCatBtn(btn) {
     btn.addEventListener('click', function() {
         const td = this.closest('td');
         td.querySelector('.cat-display').style.display = '';
         td.querySelector('.inline-edit-cat').classList.remove('active');
     });
-});
+}
 
-document.querySelectorAll('.save-cat-btn').forEach(btn => {
+function attachSaveCatBtn(btn) {
     btn.addEventListener('click', function() {
         const row    = this.closest('tr');
         const sender = row.dataset.sender;
@@ -350,13 +504,26 @@ document.querySelectorAll('.save-cat-btn').forEach(btn => {
         data.append('category', cat);
         fetch(BULK_CATEGORIZE_URL, { method: 'POST', body: data })
             .then(r => r.json()).then(res => {
-                showAlert('Category', res.message, res.status === 'success' ? 'success' : 'danger');
-                if (res.status === 'success') setTimeout(() => window.location.reload(), 800);
+                if (res.status === 'success') {
+                    showToast(res.message || 'Category updated.', 'success');
+                    row.dataset.category = cat;
+                    renderCatDisplay(row, cat);
+                    row.classList.add('table-success');
+                    setTimeout(() => row.classList.remove('table-success'), 1500);
+                    filterTable();
+                } else {
+                    showToast(res.message || 'Failed to update category.', 'error');
+                }
             })
-            .catch(err => showAlert('Error', err.message, 'danger'))
+            .catch(err => showToast(err.message, 'error'))
             .finally(() => { btn.disabled = false; });
     });
-});
+}
+
+// Bind inline category handlers
+document.querySelectorAll('.edit-cat-btn').forEach(attachEditCatBtn);
+document.querySelectorAll('.cancel-cat-btn').forEach(attachCancelCatBtn);
+document.querySelectorAll('.save-cat-btn').forEach(attachSaveCatBtn);
 
 // ---- Search + Category Filter ----
 const searchInput    = document.getElementById('senderSearch');

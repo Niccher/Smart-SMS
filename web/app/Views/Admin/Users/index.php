@@ -178,13 +178,15 @@ function confirmAction(options) {
     });
 }
 
-function toastResult(res) {
-    if (res.status === 'success') {
-        Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
-        setTimeout(() => location.reload(), 900);
-    } else {
-        Swal.fire({ icon: 'error', title: 'Error', text: res.message });
-    }
+function showToast(title, icon = 'success') {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+    });
+    Toast.fire({ icon, title });
 }
 
 document.querySelectorAll('.btn-toggle').forEach(btn => {
@@ -193,6 +195,7 @@ document.querySelectorAll('.btn-toggle').forEach(btn => {
         const username = this.dataset.username;
         const active = this.dataset.active === '1' ? '0' : '1';
         const activate = active === '1';
+        const row = this.closest('tr');
 
         confirmAction({
             title: activate ? 'Activate user?' : 'Deactivate user?',
@@ -201,7 +204,30 @@ document.querySelectorAll('.btn-toggle').forEach(btn => {
             confirmColor: activate ? '#198754' : '#d33',
             confirmText: activate ? 'Activate' : 'Deactivate',
             action: () => postAjax('<?= base_url('admin/users/toggle') ?>', { user_id: id, active }),
-        }).then(result => { if (result.isConfirmed) toastResult(result.value); });
+        }).then(result => {
+            if (result.isConfirmed) {
+                const res = result.value;
+                if (res.status === 'success') {
+                    showToast(res.message, 'success');
+                    if (row) {
+                        const statusBadge = row.querySelector('.status-badge');
+                        if (statusBadge) {
+                            statusBadge.className = 'badge status-badge ' + (activate ? 'bg-success' : 'bg-danger');
+                            statusBadge.innerHTML = activate
+                                ? '<i class="fa-solid fa-circle-check me-1"></i>Active'
+                                : '<i class="fa-solid fa-circle-xmark me-1"></i>Inactive';
+                        }
+                        btn.dataset.active = active;
+                        btn.title = activate ? 'Deactivate' : 'Activate';
+                        btn.innerHTML = `<i class="fa-solid ${activate ? 'fa-user-slash' : 'fa-user-check'}"></i>`;
+                        row.classList.add('table-success');
+                        setTimeout(() => row.classList.remove('table-success'), 1500);
+                    }
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: res.message });
+                }
+            }
+        });
     });
 });
 
@@ -211,6 +237,7 @@ document.querySelectorAll('.btn-change-group').forEach(a => {
         const id = this.dataset.userId;
         const username = this.dataset.username;
         const group = this.dataset.group;
+        const row = this.closest('tr');
 
         confirmAction({
             title: 'Change group?',
@@ -219,7 +246,29 @@ document.querySelectorAll('.btn-change-group').forEach(a => {
             confirmColor: '#0d6efd',
             confirmText: 'Change',
             action: () => postAjax('<?= base_url('admin/users/change-group') ?>', { user_id: id, group }),
-        }).then(result => { if (result.isConfirmed) toastResult(result.value); });
+        }).then(result => {
+            if (result.isConfirmed) {
+                const res = result.value;
+                if (res.status === 'success') {
+                    showToast(res.message, 'success');
+                    if (row) {
+                        const groupTd = row.querySelector('td:nth-child(3)');
+                        if (groupTd) {
+                            let badgeClass = 'bg-secondary';
+                            if (group === 'superadmin') badgeClass = 'bg-danger';
+                            else if (group === 'admin') badgeClass = 'bg-warning text-dark';
+                            else if (group === 'user') badgeClass = 'bg-info';
+                            const label = group.charAt(0).toUpperCase() + group.slice(1);
+                            groupTd.innerHTML = `<span class="badge group-badge ${badgeClass} me-1">${label}</span>`;
+                        }
+                        row.classList.add('table-success');
+                        setTimeout(() => row.classList.remove('table-success'), 1500);
+                    }
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: res.message });
+                }
+            }
+        });
     });
 });
 
@@ -227,6 +276,7 @@ document.querySelectorAll('.btn-delete').forEach(btn => {
     btn.addEventListener('click', function() {
         const id = this.dataset.userId;
         const username = this.dataset.username;
+        const row = this.closest('tr');
 
         confirmAction({
             title: 'Delete user?',
@@ -234,7 +284,24 @@ document.querySelectorAll('.btn-delete').forEach(btn => {
             icon: 'warning',
             confirmText: 'Delete',
             action: () => postAjax('<?= base_url('admin/users/delete') ?>', { user_id: id }),
-        }).then(result => { if (result.isConfirmed) toastResult(result.value); });
+        }).then(result => {
+            if (result.isConfirmed) {
+                const res = result.value;
+                if (res.status === 'success') {
+                    showToast(res.message, 'success');
+                    if (row) {
+                        row.style.transition = 'all 0.3s ease';
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateX(20px)';
+                        setTimeout(() => {
+                            row.remove();
+                        }, 300);
+                    }
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: res.message });
+                }
+            }
+        });
     });
 });
 </script>

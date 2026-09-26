@@ -85,22 +85,98 @@ document.getElementById('senderSearch')?.addEventListener('input', function() {
     });
 });
 
-document.querySelectorAll('.set-finance').forEach(btn => {
+function showToast(title, icon = 'success') {
+    if (typeof Swal !== 'undefined') {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+        Toast.fire({ icon, title });
+    } else {
+        showAlert('Sender', title, icon);
+    }
+}
+
+function attachSetFinanceHandler(btn) {
     btn.addEventListener('click', function() {
         const sender = this.dataset.sender;
         const isFinance = this.dataset.isFinance === '1';
         const action = isFinance ? 'finance' : 'non-finance';
-        if (!confirm('Mark sender "' + sender + '" as ' + action + '? This updates all profiles and SMS classifications for this sender.')) return;
-        const data = new FormData();
-        data.append('sender', sender);
-        data.append('is_finance', isFinance ? '1' : '0');
-        fetch('<?= base_url('admin/ml/senders/set-finance') ?>', { method: 'POST', body: data })
-            .then(r => r.json()).then(res => {
-                showAlert('Sender', res.message, res.status === 'success' ? 'success' : 'danger');
-                if (res.status === 'success') setTimeout(() => window.location.reload(), 1200);
-            })
-            .catch(err => showAlert('Error', err.message, 'danger'));
+        const row = this.closest('tr');
+        const self = this;
+
+        const doToggle = () => {
+            const originalHtml = self.innerHTML;
+            self.disabled = true;
+            self.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Updating...';
+
+            const data = new FormData();
+            data.append('sender', sender);
+            data.append('is_finance', isFinance ? '1' : '0');
+            fetch('<?= base_url('admin/ml/senders/set-finance') ?>', { method: 'POST', body: data })
+                .then(r => r.json()).then(res => {
+                    self.disabled = false;
+                    if (res.status === 'success') {
+                        showToast(res.message, 'success');
+                        if (row) {
+                            const statusCell = row.querySelector('td:nth-child(5)');
+                            if (statusCell) {
+                                statusCell.innerHTML = isFinance
+                                    ? '<span class="badge bg-success">Finance</span>'
+                                    : '<span class="badge bg-secondary">Non-finance</span>';
+                            }
+                            if (isFinance) {
+                                self.className = 'btn btn-sm btn-outline-secondary set-finance';
+                                self.dataset.isFinance = '0';
+                                self.innerHTML = '<i class="fa-solid fa-ban me-1"></i> Set Non-finance';
+                            } else {
+                                self.className = 'btn btn-sm btn-outline-success set-finance';
+                                self.dataset.isFinance = '1';
+                                self.innerHTML = '<i class="fa-solid fa-check me-1"></i> Set Finance';
+                            }
+                            row.classList.add('table-success');
+                            setTimeout(() => row.classList.remove('table-success'), 1500);
+                        }
+                    } else {
+                        self.innerHTML = originalHtml;
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Error', res.message, 'error');
+                        } else {
+                            showAlert('Error', res.message, 'danger');
+                        }
+                    }
+                })
+                .catch(err => {
+                    self.disabled = false;
+                    self.innerHTML = originalHtml;
+                    showToast(err.message || 'Network error', 'error');
+                });
+        };
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: isFinance ? 'Mark as Finance?' : 'Mark as Non-Finance?',
+                text: `Mark sender "${sender}" as ${action}? This updates all profiles and SMS classifications for this sender.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: isFinance ? '#198754' : '#6c757d',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: `Yes, Set ${isFinance ? 'Finance' : 'Non-Finance'}`,
+                cancelButtonText: 'Cancel'
+            }).then(result => {
+                if (result.isConfirmed) doToggle();
+            });
+        } else {
+            if (confirm('Mark sender "' + sender + '" as ' + action + '? This updates all profiles and SMS classifications for this sender.')) {
+                doToggle();
+            }
+        }
     });
-});
+}
+
+document.querySelectorAll('.set-finance').forEach(attachSetFinanceHandler);
 </script>
 <?= $this->endSection() ?>
