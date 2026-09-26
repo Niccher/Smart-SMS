@@ -40,6 +40,21 @@ class CronRunner
                 'label' => 'Process Deferred Email Queue',
                 'desc' => 'Processes pending email queue entries and retries failed email sends (php spark email:process).',
             ],
+            'logs:prune' => [
+                'group' => 'Spark Commands',
+                'label' => 'Prune Old Logs',
+                'desc' => 'Prunes audit, cron, and email logs older than 90 days (php spark logs:prune).',
+            ],
+            'recurring:remind' => [
+                'group' => 'Spark Commands',
+                'label' => 'Send Recurring Bill Reminders',
+                'desc' => 'Sends 3-day upcoming bill reminders to opted-in users (php spark recurring:remind).',
+            ],
+            'weekly:digest' => [
+                'group' => 'Spark Commands',
+                'label' => 'Send Weekly Digest',
+                'desc' => 'Sends Sunday weekly financial digest email to opted-in users (php spark weekly:digest).',
+            ],
             'db:backup' => [
                 'group' => 'Database',
                 'label' => 'Create Database Backup',
@@ -80,6 +95,9 @@ class CronRunner
                 case 'data:retention':
                 case 'reports:send':
                 case 'email:process':
+                case 'logs:prune':
+                case 'recurring:remind':
+                case 'weekly:digest':
                     return self::runSpark($type);
 
                 case 'db:backup':
@@ -109,7 +127,9 @@ class CronRunner
     {
         $output = [];
         $code = 1;
-        $cmd = 'cd ' . escapeshellarg(FCPATH) . ' && php spark ' . escapeshellarg($type) . ' 2>&1';
+        $php = defined('PHP_BINARY') && PHP_BINARY ? PHP_BINARY : 'php';
+        $spark = ROOTPATH . 'spark';
+        $cmd = 'cd ' . escapeshellarg(ROOTPATH) . ' && ' . escapeshellcmd($php) . ' ' . escapeshellarg($spark) . ' ' . escapeshellarg($type) . ' 2>&1';
         exec($cmd, $output, $code);
 
         return [
