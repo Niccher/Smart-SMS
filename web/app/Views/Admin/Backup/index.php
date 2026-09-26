@@ -353,8 +353,12 @@ document.getElementById('backupForm').addEventListener('submit', async function(
         a.click();
         window.URL.revokeObjectURL(url);
 
-        status.textContent = 'Backup downloaded!';
+        status.textContent = 'Backup downloaded! Updating history...';
         status.className = 'text-success small fw-semibold';
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 1200);
     } catch (err) {
         status.textContent = 'Error: ' + err.message;
         status.className = 'text-danger small fw-semibold';

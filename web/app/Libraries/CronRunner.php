@@ -192,6 +192,21 @@ class CronRunner
 
         file_put_contents($file, $out);
 
+        try {
+            $model = new \App\Models\BackupModel();
+            $model->logBackup([
+                'filename'       => basename($file),
+                'filepath'       => 'writable/backups/' . basename($file),
+                'file_size'      => (int) @filesize($file),
+                'structure_only' => 0,
+                'compressed'     => 0,
+                'type'           => 'scheduled',
+                'created_by'     => 'cron',
+            ]);
+        } catch (\Throwable $e) {
+            log_message('warning', 'Could not record backup in tbl_Backups: ' . $e->getMessage());
+        }
+
         // Retention: keep the latest 30 backups.
         $files = glob($dir . '/db_*.sql') ?: [];
         usort($files, static fn ($a, $b) => filemtime($b) <=> filemtime($a));

@@ -29,39 +29,58 @@ class Backup extends BaseController
         try {
             $structureOnly = (bool)$this->request->getGet('structure_only');
             $compress = (bool)$this->request->getGet('compress');
-            // All tables included by default; no exclusions
 
             $dump = $this->generateDump($structureOnly, []);
-            $filename = $this->getBackupFilename($compress);
+            
+            $isGz = false;
+            if ($compress && function_exists('gzencode')) {
+                $compressedDump = gzencode($dump, 9);
+                if ($compressedDump !== false) {
+                    $dump = $compressedDump;
+                    $isGz = true;
+                }
+            }
+
+            $filename = $this->getBackupFilename($isGz);
             $filepath = WRITEPATH . 'backups/' . $filename;
 
             Audit::log('db_backup_download', 'system', 'Downloaded database backup', [
-                'structure_only' => $structureOnly,
-                'compress' => $compress,
+                'structure_only'  => $structureOnly,
+                'compress'        => $isGz,
                 'excluded_tables' => [],
-                'size_bytes' => strlen($dump),
+                'size_bytes'      => strlen($dump),
             ]);
-
-            if ($compress && function_exists('gzencode')) {
-                $dump = gzencode($dump, 9);
-                $filename .= '.gz';
-                $filepath .= '.gz';
-            }
 
             // Save to backups directory for history
             $backupDir = dirname($filepath);
             if (!is_dir($backupDir)) {
-                mkdir($backupDir, 0755, true);
+                mkdir($backupDir, 0775, true);
             }
             file_put_contents($filepath, $dump);
 
-            // Keep only last 10 backups
-            $this->cleanOldBackups(10);
+            // Log to tbl_Backups
+            try {
+                $model = new \App\Models\BackupModel();
+                $model->logBackup([
+                    'filename'       => $filename,
+                    'filepath'       => 'writable/backups/' . $filename,
+                    'file_size'      => strlen($dump),
+                    'structure_only' => $structureOnly ? 1 : 0,
+                    'compressed'     => $isGz ? 1 : 0,
+                    'type'           => 'manual',
+                    'created_by'     => auth()->user()->username ?? 'admin',
+                ]);
+            } catch (\Throwable $e) {
+                log_message('warning', 'Could not record backup in tbl_Backups: ' . $e->getMessage());
+            }
+
+            // Keep only last 20 backups
+            $this->cleanOldBackups(20);
 
             return $this->response
-                ->setHeader('Content-Type', $compress ? 'application/gzip' : 'application/sql')
+                ->setHeader('Content-Type', $isGz ? 'application/gzip' : 'application/sql')
                 ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
-                ->setHeader('Content-Length', strlen($dump))
+                ->setHeader('Content-Length', (string)strlen($dump))
                 ->setBody($dump);
         } catch (\Throwable $e) {
             log_message('error', 'DB backup failed: ' . $e->getMessage());
@@ -111,18 +130,18 @@ class Backup extends BaseController
     public function delete()
     {
         $file = $this->request->getPost('file');
-        if ($file === '') {
+        if (empty($file)) {
             return $this->respond(['status' => 'error', 'message' => 'File not specified'], 400);
         }
 
-        $path = realpath(WRITEPATH . 'backups' . DIRECTORY_SEPARATOR . $file);
-        $backupDir = realpath(WRITEPATH . 'backups');
+        $file = basename($file);
+        $path = WRITEPATH . 'backups' . DIRECTORY_SEPARATOR . $file;
         
-        if ($path === false || strpos($path, $backupDir) !== 0 || !is_file($path)) {
+        if (!is_file($path)) {
             return $this->respond(['status' => 'error', 'message' => 'File not found'], 404);
         }
 
-        if (unlink($path)) {
+        if (@unlink($path)) {
             Audit::log('db_backup_delete', 'system', 'Deleted backup file', ['file' => $file]);
             return $this->respond(['status' => 'success', 'message' => 'Backup deleted']);
         }
@@ -136,16 +155,20 @@ class Backup extends BaseController
             return $this->respond(['status' => 'error', 'message' => 'File not specified'], 400);
         }
 
-        $path = realpath(WRITEPATH . 'backups' . DIRECTORY_SEPARATOR . $file);
-        $backupDir = realpath(WRITEPATH . 'backups');
+        $file = basename($file);
+        $path = WRITEPATH . 'backups' . DIRECTORY_SEPARATOR . $file;
         
-        if ($path === false || strpos($path, $backupDir) !== 0 || !is_file($path)) {
+        if (!is_file($path)) {
             return $this->respond(['status' => 'error', 'message' => 'File not found'], 404);
         }
 
+        $isGz = str_ends_with(strtolower($file), '.gz');
+        $contentType = $isGz ? 'application/gzip' : 'application/sql';
+
         return $this->response
-            ->setHeader('Content-Type', 'application/sql')
+            ->setHeader('Content-Type', $contentType)
             ->setHeader('Content-Disposition', 'attachment; filename="' . $file . '"')
+            ->setHeader('Content-Length', (string)filesize($path))
             ->setBody(file_get_contents($path));
     }
 
@@ -298,15 +321,23 @@ class Backup extends BaseController
     {
         $date = date('Y-m-d_H-i-s');
         $ext = $compress ? '.sql.gz' : '.sql';
-        return 'mpesa_analyzer_backup_' . $date . $ext;
+        return 'backup_' . $date . $ext;
     }
 
-    private function cleanOldBackups(int $keep): void
+    private function cleanOldBackups(int $keep = 20): void
     {
         $dir = WRITEPATH . 'backups';
         if (!is_dir($dir)) return;
 
-        $files = glob($dir . '/backup_*.sql*');
+        $allFiles = scandir($dir) ?: [];
+        $files = [];
+        foreach ($allFiles as $f) {
+            $path = $dir . DIRECTORY_SEPARATOR . $f;
+            if (is_file($path) && preg_match('/\.(sql|sql\.gz|gz)$/i', $f)) {
+                $files[] = $path;
+            }
+        }
+
         usort($files, fn($a, $b) => filemtime($b) - filemtime($a));
 
         foreach (array_slice($files, $keep) as $file) {
@@ -392,15 +423,30 @@ class Backup extends BaseController
         $dir = WRITEPATH . 'backups';
         if (!is_dir($dir)) return [];
 
-        $files = glob($dir . '/backup_*.sql*');
-        $history = [];
+        $allFiles = scandir($dir);
+        if ($allFiles === false) return [];
 
-        foreach ($files as $file) {
+        $history = [];
+        foreach ($allFiles as $file) {
+            if ($file === '.' || $file === '..' || $file === '.gitkeep') {
+                continue;
+            }
+
+            $filepath = $dir . DIRECTORY_SEPARATOR . $file;
+            if (!is_file($filepath)) {
+                continue;
+            }
+
+            // Match any database backup file (.sql, .sql.gz, or legacy .gz)
+            if (!preg_match('/\.(sql|sql\.gz|gz)$/i', $file)) {
+                continue;
+            }
+
             $history[] = [
-                'name' => basename($file),
-                'size' => filesize($file),
-                'human_size' => $this->humanSize(filesize($file)),
-                'modified' => date('Y-m-d H:i:s', filemtime($file)),
+                'name'       => $file,
+                'size'       => filesize($filepath),
+                'human_size' => $this->humanSize(filesize($filepath)),
+                'modified'   => date('Y-m-d H:i:s', filemtime($filepath)),
             ];
         }
 
